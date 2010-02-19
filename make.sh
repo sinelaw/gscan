@@ -1,0 +1,1 @@
+lhs2TeX gaccum.lhs  -o gaccum.tex && pdflatex gaccum.tex ; bibtex gaccum && pdflatex gaccum.tex ; pdflatex gaccum.tex ; 

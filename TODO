@@ -1,0 +1,2 @@
+* gscan for discrete-time: it's not exactly scanr, because we want to allow the "scanning function" to be able
+   to control the Time in the resulting pairs?

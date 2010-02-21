@@ -36,13 +36,14 @@ module GAccum where
 
 \begin{document}
 
-\title{\textbf{Behavioral Amnesia} \\
-  {\large or: Accumulation of Finite Memory for Temporal Values}}
-\author{Noam~Lewis [lenoam at gmail.com]}
-
+\title{Behavioral Amnesia: \\
+  Gradual Accumulation of Memory for Temporal Values}
+\author{Noam~Lewis \\
+  lenoam $\rightarrow$ gmail.com}
 \maketitle
 
 \begin{abstract}
+  It's impossible to tell the future. Furthermore, in our physical reality, there is no way to access arbitrary events (or phenomena) in the past. We must store information in real-time if we want to use it later. Functional Reactive Programming (FRP) aims to supply a semantically simple and precise model for programming temporally reactive systems. This report is about an attempt to form a semantic model for FRP that includes a restriction on arbitrary access in time. Implementation issues (which may be critical) are purposely ignored.
 \end{abstract}
 
 \section{Introduction}
@@ -71,11 +72,11 @@ If we can't access the past nor the future, if all we can access is the present,
 \end{itemize}
 Note that the combination of integration and time delay will allow us to implement (for vectorial values) the general class of linear systems (via convolution). This is just a test of the minimum ``power'' that we want from our denotational framework. Integration requires memory up to the current time. Minimum is an example of an operation that also requires such memory but can't be defined (as far as I know) using integration.\footnote{Another possible test case to consider is time scaling. Is that something we really want to allow?}
 
-Let us define what we are looking for. We want a semantic interface that will allow us to define the above test cases. Some sort of a ``generalized scanr'', maybe:
+Let us define what we are looking for. We want a semantic interface that will allow us to define the above test cases. First, let us use ``\emph{Temporal a}'' as the general semantic type of temporal values (both behaviors and events). Then, what we want is sort of a ``temporal scanl'', maybe:\footnote{Reactive's (see \cite{Elliott2009-push-pull-frp}) function, \emph{scanlE}, has a similar type; so do functions from other existing FRP frameworks.}
 \begin{code}
-  gscan :: ScanFunc a b -> b -> TemporalValue a -> TemoralValue b
+  scanlT :: ScanFunc a b -> b -> Temporal a -> Temporal b
 \end{code}
-The argument of type \emph{ScanFunc} is a function that is specific to the kind of transformation we want to perform on the temporal value argument (and who'se type depends on $a$). \emph{TemporalValue a} may be semantically equivalent to \emph{Time $\rightarrow$ a}, but I suggest we postpone the discussion of the denotation of \emph{TemporalValue}. Instead, let's try to figure out the \emph{interface}, the precise type and meaning of our function ``\emph{?}'' (and maybe even find a suitable name).
+Remember that we're discussing denotations, and the type in an actual implementation may differ. The argument of type \emph{ScanFunc a b} is a function that is specific to the kind of transformation we want to perform on the temporal value argument. \emph{Temporal a} may be semantically equivalent to \emph{Time $\rightarrow$ a}, but I suggest we postpone the discussion of the denotation of \emph{Temporal}. Instead, let's try to figure out the \emph{interface}, as manifest in the precise type and meaning of \emph{scanlT}. Meanwhile, for \emph{Temporal a} we'll use the functional denotation \emph{Time $\rightarrow$ a}, under the assumption that the final denotation is more limited, not more permissive.
 
 My initial intuition was that the solution lies in ``infinitesimal time delays'', that if we allow access to the ``most recent'' past, we'll be able to perform ``memory-full'' calculations. You can probably imagine my hands waving wildly as I wrote that last sentence. A first attempt to formalize that statement was:
 \begin{equation*}
@@ -85,7 +86,7 @@ A somewhat obvious fault with this definition is that for continuous valued func
 \begin{equation*}
   f\ \mbox{is continuous} \Leftrightarrow \forall x : f(x) = \lim_{dx \rightarrow 0}{f(x-dx)}
 \end{equation*}
-As such, the above attempt is useless. On the other hand, for non-continuous functions things are different. These thoughts lead to my next attempt at defining a proper notion of operations with finite memory. 
+As such, the above attempt is useless.\footnote{For the less mathematically inclined (such as myself), continuity also has a more general topological definition, which is probably more appropriate here in the context of arbitrary types $a$ in $Time \rightarrow a$.} On the other hand, for non-continuous functions things are different. These thoughts lead to my next attempt at defining a proper notion of operations with finite memory. 
 
 \section{Divide and Conquer}
 Temporal values don't have to change whenever time changes. Nor are they limited to the range $\mathbb{R}$ of real numbers, or even to types that are infinite at all. A temporal value may even be binary, switching between two values. To facilitate the discussion, consider the following definitions:
@@ -96,41 +97,66 @@ Temporal values don't have to change whenever time changes. Nor are they limited
 \label{def:discrete-time}
   If for every finite interval $[a,b]$ a function $f$ is defined at a finite number of points $t \in [a,b]$ and otherwise undefined, it is called a function of \emph{discrete time}.
 \end{definition}
-The two classes of functions above are mutually exclusive, but not complementary. There are functions that don't fit in any of the two definitions. For example, a function of rational time ($t \in \mathbb{Q}$). I'd like to limit the discussion to functions that belong in either the continuous-time or discrete-time classes. Alternatively we could have defined discrete-time to mean a countable domain, but I'm pretty sure that the more limited definition presented above is (a) sufficiently general, and (b) easier to work with.
+The two classes of functions above are mutually exclusive, but not complementary. There are functions that don't fit in any of the two definitions. For example, a function of rational time ($t \in \mathbb{Q}$). I'd like to limit the discussion to functions that belong in either the continuous-time or discrete-time classes. We \emph{could} have defined discrete-time to mean a countable domain, but I'm pretty sure that the more limited definition presented above is (a) sufficiently general, and (b) easier to work with.
 
-The above definitions categorize functions according to their domain, time. An orthogonal categorization concerns the range - the type of the function's result. The criterion I want to focus on is whether or not the result type is \emph{countable}.
+The above definitions categorize functions according to their domain, time. An orthogonal categorization concerns the range - the type of the function's result. The criterion I want to focus on is whether or not we can say that the temporal value is a ``step function''. Stated more precisely in terms of continuity:
+\begin{definition}[Discrete value]
+  \label{def:discrete-value}
+  A function $Time \rightarrow a$ that is piecewise constant (a step function) is called a function of \emph{discrete value}. Piecewise constancy means that for every interval $t \in [a,b]$ the function changes its value a finite number of times.
+\end{definition}
+Similarly we may talk about having discrete value in an interval (piecewise constant in that interval), and of functions that are piecewise discrete and non-discrete valued (piecewise constant in some intervals but not in others).\footnote{It may be possible to find types $a$ such that \emph{every} function of type $Time \rightarrow a$ is of discrete value. The characterization of such types has something to do with topology and the notion of a totally disconnected space.}
 
-Now we can divide the world of temporal values (functions of time) $Time \rightarrow a$ into four territories:
+Now we can divide the world of temporal values, $Time \rightarrow a$, into four territories:
 \begin{enumerate}
-\item Discrete time, countable range
-\item Discrete time, uncountable range
-\item Continuous time, countable range
-\item Continuous time, uncountable range
+\item Discrete time, discrete value
+\item Discrete time, non-discrete value
+\item Continuous time, discrete value
+\item Continuous time, non-discrete value
 \end{enumerate}
-This division may help us tackle the issue of how to represent finite memory systems. Since we don't know what model appropriately satisfies the condition of no arbitrary access in time, let us try to define an \emph{interface} for working with temporal values. The model may then, hopefully, be deduced from the interface that we want it to provide. 
+This division may help us tackle the issue of how to represent finite memory systems with no arbitrary access in time. Our first step deals with functions of discrete-time, corresponding to the union of classes 1 and 2 above.
 
 \subsection{Discrete time}
-Any function $Time \rightarrow a$ of discrete time (Definition \ref{def:discrete-time}) is equivalent to a countable set of pairs of the type $(Time,a)$, such that for every interval $[t_0,t_1] \subset Time$ there are a finite number of pairs $(t,x): t \in [t_0, t_1],x \in a$. In this case \emph{gscan} (the ``generalized scanr'') can be simply \emph{scanr} on a time-ordered sequence of the pairs. The countability of the range does not matter.
+Any function $Time \rightarrow a$ of discrete time (Definition \ref{def:discrete-time}) is equivalent to a countable set of pairs of the type $(Time,a)$, such that for every interval $[t_0,t_1] \subset Time$ there are a finite number of pairs $(t,x): t \in [t_0, t_1],x :: a$. The countability of the range does not matter. In this case \emph{scanlT} (the ``temporal scanl'') can be simply \emph{scanl} on a time-ordered sequence of the pairs. Recall the type of \emph{scanl}:
+\begin{code}
+  scanl :: (a -> b -> b) -> b -> [a] -> [b]
+  -- so the suggestion is, using the fact that our ``Temporal a'' is discrete-timed,
+  -- and therefore Temporal a = [(Time, a)]:
+  newtype TP a = (Time, a)
+  scanlT :: (TP a -> TP b -> TP b) -> TP b -> [TP a] -> [TP b]
+  -- a semantic implementation:
+  scanlT = scanl
+\end{code}
+Thus, our interface for transforming temporal values of discrete time does not allow arbitrary access in time: it only allows access to the ``current'' time, plus access to the operation's result from the last defined time point.
 
-\subsection{Continuous time, countable range}
+\subsection{Continuous time, discrete value}
+Once we enter the domain of continuous time, we can no longer meaningfully discuss ``the last defined time point''. We have shown how our attempted definition at ``infinitesimal time delay'' becomes problematic, but the problem was based on the continuity property. We are now discussing temporal values that have discrete value (Definition \ref{def:discrete-value}), and therefore continuity is impossible. We can think of our temporal values as step functions, where the value suddenly changes at some points in time. We can then construct a list of those steps, and pair each new value with the time of the step. We then again end up with an ordered list of pairs $(Time,a)$. Therefore the definition of \emph{scanlT} used in the discrete-time case above can be used here too, except that here we work on the list of steps rather than the list of defined time points.
 
-\subsection{Continuous time, uncountable range}
+\subsection{Continuous time, non-discrete value}
+Finally, we have to deal with temporal values of continuous time and non-discrete value. This means that in a finite time interval the temporal value may change at an infinite number of time points. How can we define \emph{scanlT} in a way that makes sense in the case of non-discrete changes in value? To make things simpler, let us assume that the value changes ``smoothly'', so that at sufficient ``magnification'' of the time axis the value doesn't change much (this issue will be made precise in Section \ref{sec:bandlimit}). So far we've managed by choosing \emph{scanlT} to take a function of type $(Time,a) \rightarrow (Time,b) \rightarrow (Time,b)$, and run that function through a list of pairs, $[(Time,a)]$. With non-discrete value, however, between every two time points there are points in-between in which the function changes its value. It may be possible to define a list of step values as before, but it will be ``infinitely dense'' and the time value of one pair will be the same as the time value of the next pair.
+
+How can we deal with this infinitely confusing sequence?
+
 
 \section{The Generalized Memory Accumulator}
-\begin{code}
-  gscan :: (r -> y -> y -> DTime -> r) -> r 
-            -> Temporal y -> Temporal y
-\end{code}
-The meaning of \emph{Temporal y} can be either \emph{[(Time, y)]} (Events) or \emph{Time -> y} (Behaviors). 
+To answer the question, let's take a look at the usual tool used to tackle infinitly small values: the limit. Let us consider a sequence of $(Time,a)$ pairs where the time interval between successive pairs goes, in the limit, to zero. Using the denotation \emph{Temporal a} $=Time\rightarrow a$, the value of a temporal value $u$ at time $t$ is simply $u\ t$ (or $u(t)$ in the usual mathematical notation). The sequence is then:
+\begin{eqnarray*}
+  \{u_n\} &=& \lim_{dt \rightarrow 0}{\ldots, (t_n,\ u\ t_n), (t_{n+1},\ u\ t_{n+1}), (t_{n+2},\ u\ t_{n+2}), \ldots} \\
+  dt &\ge& \max_n{(t_{n+1}-t_{n})}
+\end{eqnarray*}
+and the sequence is ordered, so that
+\begin{eqnarray*}
+  \ldots \leq t_n \leq t_{n+1} \leq t_{n+2} \leq \ldots 
+\end{eqnarray*}
+Now, for non-discrete temporal values of continuous time, the \emph{scanlT} function can be defined as before except that we use the sequence in the limit rather than trying to find the ``stepping points''. The difference between this and the previous cases is that we end up evaluating the temporal value at \emph{all} time points, regardless of whether the value actually changes in their vicinity at all or not. 
 
 \begin{code}
   integrate :: Temporal y -> Temporal y
-  integrate = gscan psum 0 
+  integrate = scanlT psum 0 
     where psum s y1 y2 dt = s + (y2+y1)/2*dt
 \end{code}
 \begin{code}
   differentiate :: Temporal y -> Temporal y
-  differentiate = gscan pdiff 0  
+  differentiate = scanlT pdiff 0  
     where pdiff _ y1 y2 dt = (y2-y1)/dt
 \end{code}
 
@@ -141,6 +167,7 @@ Proof that \emph{differentiate} is inverse of \emph{integrate}:
 \end{eqnarray*}
 
 \section{Fun(cs) with Computability and Bandlimits}
+\label{sec:bandlimit}
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

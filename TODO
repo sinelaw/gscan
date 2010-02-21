@@ -1,2 +1,5 @@
 * gscan for discrete-time: it's not exactly scanr, because we want to allow the "scanning function" to be able
    to control the Time in the resulting pairs?
+
+* on other hand if we don't pass dt to scanning func in continuous vs. non-discrete case, we can't calculate
+   integration (also because the initial result has to take the -infty time or something)

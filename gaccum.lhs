@@ -208,7 +208,7 @@ Another test case - maximum:
     where pmax (t2,y2) _ m = max m y2
 \end{code}
 
-Time shifting is problematic. We could allow function passed into \emph{scanlT} to output the time value of each output it produces, but that opens the door to setting values at arbitrary times.
+Time shifting is problematic. We could allow the function passed into \emph{scanlT} to output the time value of each output it produces (output a time-value pair instead of just a value), but that opens the door to setting values at arbitrary times. We must once again turn to reality for ideas. How does time-shifting work in the real world? 
 
 \section{Fun(cs) with Computability and Bandlimits}
 \label{sec:bandlimit}

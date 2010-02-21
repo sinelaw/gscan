@@ -25,8 +25,8 @@ module GAccum where
 \topmargin -1.5cm        % read Lamport p.163
 \oddsidemargin -0.04cm   % read Lamport p.163
 \evensidemargin -0.04cm  % same as oddsidemargin but for left-hand pages
-\textwidth 16.59cm
-\textheight 21.94cm 
+\textwidth 16.5cm
+\textheight 23.5cm 
 
 \bibpunct();A{},\let\cite=\citep
 
@@ -43,7 +43,7 @@ module GAccum where
 \maketitle
 
 \begin{abstract}
-  It's impossible to tell the future. Furthermore, in our physical reality, there is no way to access arbitrary events (or phenomena) in the past. We must store information in real-time if we want to use it later. Functional Reactive Programming (FRP) aims to supply a semantically simple and precise model for programming temporally reactive systems. This report is about an attempt to form a semantic model for FRP that includes a restriction on arbitrary access in time. Implementation issues (which may be critical) are purposely ignored.
+  It's impossible to tell the future. Furthermore, in our physical reality, there is no way to access arbitrary events (or phenomena) in the past. We must store information in real-time if we want to use it later. Functional Reactive Programming (FRP) aims to supply a semantically simple and precise model for programming temporally reactive systems. This report is about an attempt to form a semantic model for FRP that includes a restriction on arbitrary access in time. We explore the idea of realistic accumulation of memory by considering different classes of time dependent values. Implementation issues (which may be critical) are purposely ignored.
 \end{abstract}
 
 \section{Introduction}
@@ -159,7 +159,7 @@ Where \emph{scanlT} is as defined before, basically a specialization of \emph{sc
 
 The first test case we shall try is differentiation. It should be the easiest, because it's local - it does not require memory of past values. A common definition of the derivative is:
 \begin{equation*}
-  \frac{df}{dt}(t) = lim_{\Delta t \rightarrow 0}{\frac{ f(t) - f(t-\Delta t) }{\Delta t}}
+  \frac{df}{dt}(t) = \lim_{\Delta t \rightarrow 0}{\frac{ f(t) - f(t-\Delta t) }{\Delta t}}
 \end{equation*}
 Notice that the function inside the limit expression requires knowledge of the time delta. The limit expression also makes use of \emph{two} values of the function $f$: one at the current time, $t$, and a second at $t - \Delta t$. It makes sense for us too to allow access to those three things: $\Delta t$, $f(t)$ and $f(t - \Delta t)$. Otherwise the limit on \emph{scanlT} will again become useless. Consequently, a better type for \emph{scanlT} is:
 \begin{code}
@@ -167,8 +167,8 @@ Notice that the function inside the limit expression requires knowledge of the t
 \end{code}
 Where as before, \emph{TP a = (Time, a)}. The function $f$ given to \emph{scanlT} takes the following arguments:
 \begin{enumerate}
-\item $(t,f(t))$,
-\item $(t-\Delta t,f(t-\Delta t))$, and
+\item $(t,x_t)$,
+\item $(t-\Delta t,x_{t-\Delta t})$, and
 \item the result of applying $f$ to the previous two values.
 \end{enumerate}
 The function returns the result value that matches the time $t$, the value that the output of \emph{scanlT} will have at $t$. With the new type it's still not hard to ``implement'' \emph{scanlT}:

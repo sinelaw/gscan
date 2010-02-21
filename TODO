@@ -5,3 +5,5 @@
    integration (also because the initial result has to take the -infty time or something)
 
 * define time shifting without allowing setting of values at aribtrary times
+
+* make 4  example illustrative graphs, one for each class of temporal values.

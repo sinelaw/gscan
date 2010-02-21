@@ -3,3 +3,5 @@
 
 * on other hand if we don't pass dt to scanning func in continuous vs. non-discrete case, we can't calculate
    integration (also because the initial result has to take the -infty time or something)
+
+* define time shifting without allowing setting of values at aribtrary times

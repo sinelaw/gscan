@@ -70,7 +70,7 @@ If we can't access the past nor the future, if all we can access is the present,
 \item Time delay
 \item Minimum (or maximum)
 \end{itemize}
-Note that the combination of integration and time delay will allow us to implement (for vectorial values) the general class of linear systems (via convolution). This is just a test of the minimum ``power'' that we want from our denotational framework. Integration requires memory up to the current time. Minimum is an example of an operation that also requires such memory but can't be defined (as far as I know) using integration.\footnote{Another possible test case to consider is time scaling. Is that something we really want to allow?}
+Note that integration will allow us to implement (for vectorial values) the general class of linear time-invariant causal systems (via convolution with a known impulse response). This is just a test of the minimum ``power'' that we want from our denotational framework. Integration requires memory up to the current time. Minimum is an example of an operation that also requires such memory but can't be defined (as far as I know) using integration.\footnote{Another possible test case to consider is time scaling. Is that something we really want to allow? Time ``squeezing'' is not causal, and ``stretching'' seems to require infinite memory.}
 
 We may ask the same question about reality. How does reality ``perform memory-full operations''? Integration, in reality, can be achieved by a capacitor (integrates current, stores result in charge). A capacitor doesn't need to access arbitrary past currents to determine the present charge. A capacitor integrates by adding up a small amount of charge at real-time, as the current flows through it. This explanation is perhaps crude, but it captures the essence of memory in reality: saving a little information about the present, and combining that information with previously saved information.
 
@@ -208,12 +208,30 @@ Another test case - maximum:
     where pmax (t2,y2) _ m = max m y2
 \end{code}
 
-Time shifting is problematic. We could allow the function passed into \emph{scanlT} to output the time value of each output it produces (output a time-value pair instead of just a value), but that opens the door to setting values at arbitrary times. We must once again turn to reality for ideas. How does time-shifting work in the real world? 
 
-\section{Fun(cs) with Computability and Bandlimits}
+\section{Food for thought}
+
+\subsection{Time delay}
+
+Time delay is problematic. We could allow the function passed into \emph{scanlT} to output the time value of each output it produces (output a time-value pair instead of just a value), but that opens the door to setting values at arbitrary times. Also, time delay seems to require infinite memory (for the continuous-time case). We must once again turn to reality for ideas. How does time delay work in the real world? Apparently delays are due to reality having not only time, but also \emph{space}. This difference between our model and reality hints that we may be missing something. At the time of writing, this was an open question.
+
+\subsection{Bandlimited signals}
 \label{sec:bandlimit}
+We made an effort to deal with the continuous-time, non-discrete-value case. A point to consider is whether for some temporal values, sampling is sufficient. Recall Nyquist's theorem, which states that every signal (a function of time, specifically $\mathbb{R} \rightarrow \mathbb{R}$) who'se Fourier transform is zero outside some finite interval, can be sampled and later reconstructed exactly. The condition is that the sampling rate be greater than the highest frequency in the signal. Signals satisfying the aforementioned condition are said to be \emph{bandlimited}, and all the signals (temporal values) we normally deal with are bandlimited. Therefore, apparently we can simply sample our continuous-time temporal values at some sufficiently high sampling frequency, and the samples will contain (and indeed do contain) all the neccesary information about the signal, in a discrete-time equivalent form. However, ideal reconstruction\footnote{Shannon interpolation, if sampling is uniformly spaced} from samples to continuous-time signals is \emph{not} causal! This means that we can't meaningfully say that Nyquist sampling represents exactly the original signal, if future samples are not all known.
+
+\subsection{Computability and continuous functions}
+As pointed out in \cite{bauer_sometimes_2007}, computable functions are all continuous. Continuous functions can be approximated to arbitrary precision, as the precision of the function's argument approaches infinite precision. However, consider a step function such as $\sign(x)$, which is $-1$ for $x<0$ and $1$ at $x \ge 0$. To know the value of the function in the neighborhood of $0$ even at the ``rough'' precision of just knowing whether the result is closer to $-1$ or to $1$, we need to know the argument at infinite precision. For example, if the argument's digits are $-0.000000\ldots$, we need to know ``till the end'' whether the number is really just \emph{zero}, or whether there's a $1$ somewhere that makes it a negative number. How, if at all, should this fact alter our model? Do we need to assume that all temporal values are continuous (eliminating the class of ``step functions'' of continuous-time completely)?
 
 \section{Conclusion}
+We have discussed the following points:
+\begin{itemize}
+\item Why should (or does) FRP mean? The point is apparently denotational design of a framework for temporal systems.
+\item The idea that FRP should follow the realistic limit on arbitrary access in time.
+\item An attempt to define an operation that makes it possible compute with memory, but without access in arbitrary time points.
+\end{itemize}
+Finally we have mentioned a few concepts that are possibly related to the main discussion. 
+
+It is my hope that this incomplete report will inspire more rigorous, deeper insights into FRP by the readers.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

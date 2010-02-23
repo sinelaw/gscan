@@ -37,7 +37,8 @@ module GAccum where
 \begin{document}
 
 \title{Behavioral Amnesia: \\
-  Gradual Accumulation of Memory for Temporal Values}
+  Gradual Accumulation of Memory for Temporal Values \\
+  \emph{DRAFT}}
 \author{Noam~Lewis \\
   lenoam $\rightarrow$ gmail.com}
 \maketitle
@@ -225,9 +226,9 @@ As explained in \cite{bauer_sometimes_2007}, computable functions are all contin
 \section{Conclusion}
 We have discussed the following points:
 \begin{itemize}
-\item Why should (or does) FRP mean? The point is apparently denotational design of a framework for temporal systems.
+\item What should (or does) FRP mean? The point is apparently denotational design of a framework for temporal systems.
 \item The idea that FRP should follow the realistic limit on arbitrary access in time.
-\item An attempt to define an operation that makes it possible compute with memory, but without access in arbitrary time points.
+\item An attempt to define an operation that makes it possible compute with memory, but without access to values at arbitrary time points.
 \end{itemize}
 Finally we have mentioned a few concepts that are possibly related to the main discussion. 
 

@@ -38,17 +38,17 @@ module GAccum where
 
 \title{Behavioral Amnesia: \\
   Gradual Accumulation of Memory for Temporal Values \\
-  \emph{DRAFT}}
+  \emph{2nd DRAFT}}
 \author{Noam~Lewis \\
   lenoam $\rightarrow$ gmail.com}
 \maketitle
 
 \begin{abstract}
-  It's impossible to tell the future. Furthermore, in our physical reality, there is no way to access arbitrary events (or phenomena) in the past. We must store information in real-time if we want to use it later. Functional Reactive Programming (FRP) aims to supply a semantically simple and precise model for programming temporally reactive systems. This short report is about an attempt to form a semantic model for FRP that includes a restriction on arbitrary access in time. We explore the idea of realistic accumulation of memory by considering different classes of time dependent values. Implementation issues (which may be critical) are purposely ignored.
+  It's impossible to tell the future. Furthermore, in our physical reality, there is no way to access arbitrary events (or phenomena) in the past. We must store information in real-time if we want to use it later. Functional Reactive Programming (FRP) aims to supply a semantically simple and precise model for programming temporally reactive systems. This short report is about an attempt to form a semantic model for FRP that includes a restriction on arbitrary access in time. We explore the idea of realistic accumulation of memory by considering different classes of time dependent values. Implementation issues (which may turn out to be critical) are purposely ignored.
 \end{abstract}
 
 \section{Introduction}
-As a programmer experienced mainly in imperative languages, I am still regularly amazed by the simplicty and elegance that functional programming offers in general, and that FRP (Functional Reactive Programming) seems to promise in particular. However, awe and amazement are no replacement for comprehension. The question ``What is FRP?'' still has no clear answer in my mind. Having read a little about FRP (\cite{ElliottHudak97:Fran}, \cite{nilsson_functional_2002}, \cite{courtney_yampa_2003}, \cite{hudak_arrows_2003}, \cite{Elliott2009-push-pull-frp}) and several blog posts, and after discussing FRP with different people from various different angles, I am still confused. What is the essence, the common factor that makes one approach - but not a second - worthy of the title FRP? Lately, following insights shared by Conal Elliott and others, I've realized that the essence of FRP can be summarized by the two following notions:
+As a programmer experienced mainly in imperative languages, I am still regularly amazed by the simplicity and elegance that functional programming offers in general, and that FRP (Functional Reactive Programming) seems to promise in particular. However, awe and amazement are no replacement for comprehension. The question ``What is FRP?'' still has no clear answer in my mind. Having read a little about FRP (\cite{ElliottHudak97:Fran}, \cite{nilsson_functional_2002}, \cite{courtney_yampa_2003}, \cite{hudak_arrows_2003}, \cite{Elliott2009-push-pull-frp}) and several blog posts, and after discussing FRP with different people from various different angles, I am still confused. What is the essence, the common factor that makes one approach - but not a second - worthy of the title FRP? Lately, following insights shared by Conal Elliott and others, I've realized that the essence of FRP can be summarized by the two following notions:
 \begin{itemize}
 \item \emph{Semantic precision} and clarity, as manifest by the denotational approach to design (see \cite{elliott_denotational_2009}).
 \item \emph{Temporality}, or more specifically a functionally pure, referentially transparent and composable approach to temporally changing values. Time, as in real life, is continuous.\footnote{In our normal life it is. I'm disregarding the possibility of amazingly short time quanta.}
@@ -59,7 +59,7 @@ Elliott suggested an alternative name for FRP: ``Functional \emph{Temporal} Prog
 In some incarnations of FRP, temporally changing values are divided into two classes, each with its own denotation:
 \begin{itemize}
 \item Values that depend on continuous time. They are called \emph{behaviors}. The denotation is a function $Time \rightarrow a$ where $a$ is the value type. $Time$, for our purposes, can be just $\mathbb{R}$.
-\item Values that ``occur'' at specific time points. These are known as \emph{events}. One denotation is a list of occurances, $[(Time, a)]$, with monotonically non-decreasing times.
+\item Values that ``occur'' at specific time points. These are known as \emph{events}. One denotation is a list of occurrences, $[(Time, a)]$, with monotonically non-decreasing times.
 \end{itemize}
 Both denotations offer the possibility of ``querying'' the value at arbitrary times (see \cite{ElliotBlogGarbageCollecting}). For behaviors we can invoke the function with any time as an argument, and with events we can traverse the list to read the value at any time. However, arbitrary access in time is not realistic, it violates the design principle of ``What would reality do?'' (WWRD). Reality suggests that systems should not only be forbidden from accessing future values (breaking causality), but they should also not have access to arbitrary \emph{past} values. 
 In reality, after all, memory is lossy and finite.\footnote{I am deliberately ignoring any of the exotic properties of nature suggested by modern physics. The model I want to explore should be based on our normal experience with nature.}
@@ -135,7 +135,7 @@ Any function $Time \rightarrow a$ of discrete time (Definition \ref{def:discrete
 Once we enter the domain of continuous time, we can no longer meaningfully discuss ``the last defined time point''. We have shown how our attempted definition at ``infinitesimal time delay'' becomes problematic, but the problem was based on the continuity property. We are now discussing temporal values that have discrete value (Definition \ref{def:discrete-value}), and therefore continuity is impossible. We can think of our temporal values as step functions, where the value suddenly changes at some points in time. We can then construct a list of those steps, and pair each new value with the time of the step. We then again end up with an ordered list of pairs $(Time,a)$. Therefore the definition of \emph{scanlT} used in the discrete-time case above can be used here too, except that here we work on the list of steps rather than the list of defined time points.
 
 \subsection{Continuous time, non-discrete value}
-Finally, we have to deal with temporal values of continuous time and non-discrete value. This means that in a finite time interval the temporal value may change at an infinite number of time points. How can we define \emph{scanlT} in a way that makes sense in the case of non-discrete changes in value? To make things simpler, let us assume that the value changes ``smoothly'', so that at sufficient ``magnification'' of the time axis the value doesn't change much (this issue will be made precise in Section \ref{sec:bandlimit}). So far we've managed by choosing \emph{scanlT} to take a function of type $(Time,a) \rightarrow (Time,b) \rightarrow (Time,b)$, and run that function through a list of pairs, $[(Time,a)]$. With non-discrete value, however, between every two time points there are points in-between in which the function changes its value. It may be possible to define a list of step values as before, but it will be ``infinitely dense'' and the time value of one pair will be the same as the time value of the next pair.
+Finally, we have to deal with temporal values of continuous time and non-discrete value. This means that in a finite time interval the temporal value may change at an infinite number of time points. How can we define \emph{scanlT} in a way that makes sense in the case of non-discrete changes in value? So far we've managed by choosing \emph{scanlT} to take a function of type $(Time,a) \rightarrow (Time,b) \rightarrow (Time,b)$, and run that function through a list of pairs, $[(Time,a)]$. With non-discrete value, however, between every two time points there are points in-between in which the function changes its value. It may be possible to define a list of step values as before, but it will be ``infinitely dense'' and the time value of one pair will be the same as the time value of the next pair.
 
 How can we deal with this infinitely confusing sequence?
 
@@ -156,13 +156,17 @@ Now, for non-discrete temporal values of continuous time, the \emph{scanlT} func
 \begin{equation*}
   \mbox{\emph{scanlT' f r ta}} = \lim_{\Delta t \rightarrow 0}{\mbox{\emph{scanlT f r (sampleList $\Delta t$ ta)}}}
 \end{equation*}
-Where \emph{scanlT} is as defined before, basically a specialization of \emph{scanl} for lists of pairs $(Time, a)$.
+Where \emph{scanlT} is as defined before, basically a specialization of \emph{scanl} for lists of pairs $(Time, a)$. The limit we have just defined must exist and converge for the meaning of \emph{scanlT'} to make any sense. The existence and convergence of the limit depends on the given function \emph{f}, but also on the nature of the temporal value \emph{ta}. To make things simpler, let us assume that the value changes ``smoothly'', so that at sufficient ``magnification'' of the time axis the value doesn't change much (this issue will be made a little more precise in Section \ref{sec:bandlimit}). This assumption ensures that as $\Delta t$ approaches zero, the sequence \emph{sampleList $\Delta t$ ta} becomes ``close'' to the continuous function (for example with a squared-mean error measure).
 
-The first test case we shall try is differentiation. It should be the easiest, because it's local - it does not require memory of past values. A common definition of the derivative is:
+Now we have a candidate for an operator that``folds over continuous time'', but we still can't be sure about the type of functions it can fold (the type of the first argument to \emph{scanlT}). Let us check our test cases, starting with differentiation. Differentiation should be easiest to implement, because it's local - it does not require memory of past values. To begin, recall one common definition of the derivative:
 \begin{equation*}
   \frac{df}{dt}(t) = \lim_{\Delta t \rightarrow 0}{\frac{ f(t) - f(t-\Delta t) }{\Delta t}}
 \end{equation*}
-Notice that the function inside the limit expression requires knowledge of the time delta. The limit expression also makes use of \emph{two} values of the function $f$: one at the current time, $t$, and a second at $t - \Delta t$. It makes sense for us too to allow access to those three things: $\Delta t$, $f(t)$ and $f(t - \Delta t)$. Otherwise the limit on \emph{scanlT} will again become useless. Consequently, a better type for \emph{scanlT} is:
+Notice that the function inside the limit expression requires knowledge of the time delta. The limit expression also makes use of \emph{two} values of the function $f$: one at the current time, $t$, and a second at $t - \Delta t$. The usage of these value suggests that we too allow access to them, namely to $\Delta t$, $f(t)$ and $f(t - \Delta t)$. Otherwise we will have no way to implement differentiation and similar operations. 
+
+Another issue we have ignored is that by allowing \emph{f} to return the type \emph{TP b} we essentially allow writing to arbitrary times in the output temporal value. Allowing arbitrary access in time goes directly against our goals, so let's change also this aspect of \emph{f}'s type. Instead of taking and returning \emph{TP b} we'll change it to \emph{b}. That way, the scanning operation can use the input to calculate the output, but it can't control the time of each output: the time will be ``real time'' (i.e. the same time of the current instantaneous input).
+
+Consequently, a better type for \emph{scanlT} is (we only change the type of the first argument):
 \begin{code}
   scanlT :: (TP a -> TP a -> b -> b) -> TP b -> [TP a] -> [TP b]
 \end{code}
@@ -179,8 +183,8 @@ The function returns the result value that matches the time $t$, the value that 
   scanlT :: (TP a -> TP a -> b -> b) -> TP b -> [TP a] -> [TP b]
   scanlT f b xs = scanl f' b xs'
     where 
-      f' (t2,y2) = ((,) t2 . uncurry2 . f) (t2, y2)
-      xs' = zip xs (tail xs)
+      f' (t2,y2) = ((,) t2 . uncurry2 f) (t2, y2)
+      xs' = zip (tail xs) xs
 \end{code}
 \emph{scanlT'} should also have its type updated. The type is identical to \emph{scanlT}: the only difference between \emph{scanlT'} and \emph{scanlT} is that the former is a limit on the latter.
 
@@ -214,11 +218,11 @@ Another test case - maximum:
 
 \subsection{Time delay}
 
-Time delay is problematic. We could allow the function passed into \emph{scanlT} to output the time value of each output it produces (output a time-value pair instead of just a value), but that opens the door to setting values at arbitrary times. Also, time delay seems to require infinite memory (for the continuous-time case). We must once again turn to reality for ideas. How does time delay work in the real world? Apparently delays are due to reality having not only time, but also \emph{space}. This difference between our model and reality hints that we may be missing something. At the time of writing, this was an open question.
+Time delay is problematic. We could allow the function passed into \emph{scanlT} to output the time value of each output it produces (output a time-value pair instead of just a value), but that opens the door to setting values at arbitrary times (which is exactly the problem we avoided by disallowing outputting the time). Also, time delay seems to require infinite memory for the continuous-time case. We must once again turn to reality for ideas. How does time delay work in the real world? Apparently delays are due to reality having not only time, but also \emph{space}. In reality, we may delay information by transmitting it to a different location, an operation that must take time due to the limitation of finite velocity. FRP in general, and our proposed model in particular has no equivalent concept. This difference between our model and reality hints that we may be missing something. At the time of writing, this was an open question.
 
-\subsection{Bandlimited signals}
+\subsection{Band-limited signals}
 \label{sec:bandlimit}
-We made an effort to deal with the continuous-time, non-discrete-value case. A point to consider is whether for some temporal values, sampling is sufficient. Recall Nyquist's theorem, which states that every signal (a function of time, specifically $\mathbb{R} \rightarrow \mathbb{R}$) who'se Fourier transform is zero outside some finite interval, can be sampled and later reconstructed exactly. The condition is that the sampling rate be greater than the highest frequency in the signal. Signals satisfying the aforementioned condition are said to be \emph{bandlimited}, and all the signals (temporal values) we normally deal with are bandlimited. Therefore, apparently we can simply sample our continuous-time temporal values at some sufficiently high sampling frequency, and the samples will contain (and indeed do contain) all the neccesary information about the signal, in a discrete-time equivalent form. However, ideal reconstruction\footnote{Shannon interpolation, if sampling is uniformly spaced} from samples to continuous-time signals is \emph{not} causal! This means that we can't meaningfully say that Nyquist sampling represents exactly the original signal, if future samples are not all known.
+We made an effort to deal with the continuous-time, non-discrete-value case. A point to consider is whether for some temporal values, sampling is sufficient. Recall Nyquist's theorem, which states that every signal (a function of time, specifically $\mathbb{R} \rightarrow \mathbb{R}$) who's Fourier transform is zero outside some finite interval, can be sampled and later reconstructed exactly. The condition is that the sampling rate be greater than twice the highest frequency in the signal. Signals satisfying the aforementioned condition are said to be \emph{band-limited}, and all the signals (temporal values) we normally deal with are band-limited. Therefore, apparently we can simply sample our continuous-time temporal values at some sufficiently high sampling frequency, and the samples will contain (and indeed do contain) all the necessary information about the signal, in a discrete-time equivalent form. However, ideal reconstruction\footnote{Shannon interpolation, if sampling is uniformly spaced} from samples to continuous-time signals is \emph{not} causal! This means that we can't meaningfully say that Nyquist sampling represents exactly the original signal, if future samples are not all known.
 
 \subsection{Computability and continuous functions}
 As explained in \cite{bauer_sometimes_2007}, computable functions are all continuous. Continuous functions can be approximated to arbitrary precision, as the precision of the function's argument approaches infinite precision. On the other, non-continuous functions do not have this property. Consider a step function such as $sign(x)$, which is $-1$ for $x<0$ and $1$ at $x \ge 0$. To know the value of the function in the neighborhood of $0$ even at the ``rough'' precision of just knowing whether the result is closer to $-1$ or to $1$, we need to know the argument at infinite precision. For example, if the argument's digits are $-0.000000\ldots$, we need to know ``till the end'' whether the number is really just \emph{zero}, or whether there's a $1$ somewhere that makes it a negative number. Thus, to know anything at all about the function's value around zero we may need infinite information about the exact location. How, if at all, should this fact alter our model? Do we need to assume that all temporal values are continuous (eliminating the class of ``step functions'' of continuous-time completely)?
@@ -230,9 +234,7 @@ We have discussed the following points:
 \item The idea that FRP should follow the realistic limit on arbitrary access in time.
 \item An attempt to define an operation that makes it possible compute with memory, but without access to values at arbitrary time points.
 \end{itemize}
-Finally we have mentioned a few concepts that are possibly related to the main discussion. 
-
-It is my hope that this incomplete report will inspire more rigorous, deeper insights into FRP by the readers.
+Finally we have mentioned a few open questions (for me at least) relating to the main discussion. It is my hope that this short report will inspire more rigorous, deeper insights into FRP by the readers.
 
 \bibliographystyle{plainnat}
 \bibliography{refs}

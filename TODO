@@ -7,3 +7,17 @@
 * define time shifting without allowing setting of values at aribtrary times
 
 * make 4  example illustrative graphs, one for each class of temporal values.
+
+* section 3.3 Continuous time, non-discrete value
+  - maybe no need to mention bndlimited signals at all in this sectino?
+  - used to show that as dt -> 0, succesive values in the sequence -> identical
+
+* test cases solution for discrete-time case
+
+* "Consequently, a better type for scanlT is.." - explain why the change frpm TP b to b in the function arg
+
+* better notation for the u_n sequence
+
+* impulses / dirac's delta - discuss
+
+* integration - no need for +y1/2? we can just use y2*dt?

@@ -80,14 +80,17 @@ We enumerate the status of the sub-tasks that are part of the current stage, Sta
 
 
 \section{Graphui: The Visual Graph Editor}
+\label{sec:graphui}
 
 \subsection{Semantic design of Graphui}
 
 \subsubsection{Annotated Graph}
 Graphui is an interface between the user and an *annotated graph*. Two aspects of the graph can be edited:
 
-#. Structure: includes how nodes are connected and the values associated with the nodes and/or edges.
-#. Visual representation: how the graph is displayed, including positions, shapes, colors and textures of nodes and edges, fonts, resolution, zoom and pan, etc.
+\begin{enumerate}
+\item Structure: includes how nodes are connected and the values associated with the nodes and/or edges.
+\item Visual representation: how the graph is displayed, including positions, shapes, colors and textures of nodes and edges, fonts, resolution, zoom and pan, etc.
+\end{enumerate}
 
 We call the combination of these two an *annotated graph*. The graph itself is the structure, and the annotations are the visual representation. Obiously there is a tight relation between the graph structure and its visual representation. There shouldn't be any data about elements that don't exist in the graph, and the data *must* be present for every element of the graph.
 
@@ -95,49 +98,59 @@ We call the combination of these two an *annotated graph*. The graph itself is t
 
 There are many possible ways to define a graph. A very simple one is a set of pairs, where each pair specifies an edge between two nodes (also called vertices). This definition disallows unconnected nodes or more than one edge between two nodes, and does not support ordered edges, or values on edges. We want all of the above. We also want some way to "reference" nodes and edges in the graph to allow annotating extra data. A sufficient definition (but perhaps not the simplest one possible) is as follows.
 
-A graph with :math:`N` nodes and :math:`M` edges is a function :math:`G : \mathcal{V} \rightarrow [\mathcal{E}]`, where:
+A graph with $N$ nodes and $M$ edges is a function $G : \mathcal{V} \rightarrow [\mathcal{E}]$, where:
 
-* :math:`\mathcal{V}` is the set of nodes (vertices), :math:`\mathcal{V} = \{ (n,x) : n \in \mathbb{N}, x \in X , n < N \} \subset \mathbb{N} \times X`. 
+\begin{itemize}
+\item $\mathcal{V}$ is the set of nodes (vertices), $\mathcal{V} = \{ (n,x) : n \in \mathbb{N}, x \in X , n < N \} \subset \mathbb{N} \times X$. 
+  \begin{itemize}
+  \item The number $n$ is the *id* of the node. The node with id $n$ is denoted $v_n$, and $id_n(v_n) = n$. 
+  \item The value  $x$ of a node is given by $val(v_n)$.
+  \end{itemize}
+\item $\mathcal{E}$ is the set of edges, $\mathcal{E} = \{ (m,x,v_j,v_k) : v_j,v_k \in \mathcal{V}, m \in \mathbb{N}, x \in X , m < M \} \subset \mathbb{N} \times X \times \mathcal{V} \times \mathcal{V}$. 
+  \begin{itemize}
+  \item The node $v_j$ is the *source* node and $v_k$ is the *destination* node of the edge.
+  \item The edge with id $m$ is denoted $e_m$ and $id_e(e_m) = m$. The value $x$ of an edge is given by $val(e_m)$. 
+  \item Alternatively, we can use the number of a node to specify it, replacing $\mathcal{V} \times \mathcal{V}$ with $\mathbb{N} \times \mathbb{N} (= \mathbb{N}^2)$. Then define $\mathcal{E} = \{ (m,x,j,k) : m,j,k \in \mathbb{N}, x \in X, m < M, j,k < N \} \subset \mathbb{N}^3 \times X$.
+  \item In any case, the id of the source node (not the node itself) of an edge is given by $source(e_m) = id_n(v_j) = j$, and the destination is given by $dest(e_m) = id_n(v_k) = k$.
+  \end{itemize}
+\item $[\mathcal{E}]$ is a list (ordered sequence) of elements from $\mathcal{E}$.
+\item $X$ is the set of values (our graph can contain values on the nodes and edges) and
+\item $\mathbb{N}$ denotes the natural numbers, including $0$.
 
-  * The number :math:`n` is the *id* of the node. The node with id :math:`n` is denoted :math:`v_n`, and :math:`id_n(v_n) = n`. 
-  * The value  :math:`x` of a node is given by :math:`val(v_n)`.
+\end{itemize}
 
-* :math:`\mathcal{E}` is the set of edges, :math:`\mathcal{E} = \{ (m,x,v_j,v_k) : v_j,v_k \in \mathcal{V}, m \in \mathbb{N}, x \in X , m < M \} \subset \mathbb{N} \times X \times \mathcal{V} \times \mathcal{V}`. 
-
-  * The node :math:`v_j` is the *source* node and :math:`v_k` is the *destination* node of the edge.
-  * The edge with id :math:`m` is denoted :math:`e_m` and :math:`id_e(e_m) = m`. The value :math:`x` of an edge is given by :math:`val(e_m)`. 
-  * Alternatively, we can use the number of a node to specify it, replacing :math:`\mathcal{V} \times \mathcal{V}` with :math:`\mathbb{N} \times \mathbb{N} (= \mathbb{N}^2)`. Then define :math:`\mathcal{E} = \{ (m,x,j,k) : m,j,k \in \mathbb{N}, x \in X, m < M, j,k < N \} \subset \mathbb{N}^3 \times X`.
-  * In any case, the id of the source node (not the node itself) of an edge is given by :math:`source(e_m) = id_n(v_j) = j`, and the destination is given by :math:`dest(e_m) = id_n(v_k) = k`.
-
-* :math:`[\mathcal{E}]` is a list (ordered sequence) of elements from :math:`\mathcal{E}`.
-* :math:`X` is the set of values (our graph can contain values on the nodes and edges) and
-* :math:`\mathbb{N}` denotes the natural numbers, including :math:`0`.
 
 In words, a graph is a function from nodes to (finite) ordered lists of edges, where both nodes and edges have a number and a value associated with them.
 
-A node or edge is called a *graph element*, and every graph :math:`G` has a set of elements :math:`G_{ne} = \mathcal{V} \cup \mathcal{E}`. The number associated with each element is the *identifier* (id) of that element. Identifiers are separately unique for nodes and for edges . The id, plus the knowledge of whether it's a node or an edge, can be used as a reference to the element from external data. With every graph :math:`G` there are associated element map partial functions :math:`id_n^{-1}(n) = v_n` and :math:`id_e^{-1}(m) = e_m`, where :math:`n < N` and :math:`m < M`.
+A node or edge is called a *graph element*, and every graph $G$ has a set of elements $G_{ne} = \mathcal{V} \cup \mathcal{E}$. The number associated with each element is the *identifier* (id) of that element. Identifiers are separately unique for nodes and for edges . The id, plus the knowledge of whether it's a node or an edge, can be used as a reference to the element from external data. With every graph $G$ there are associated element map partial functions $id_n^{-1}(n) = v_n$ and $id_e^{-1}(m) = e_m$, where $n < N$ and $m < M$.
 
-For every graph :math:`G`, the corresponding *global id function* :math:`id_G` maps nodes and edges (elements of :math:`G_{ne}`) to a pair :math:`(t,k)`, where :math:`t \in \{n,e\}` (isomorphic to booleans) specifies whether the given element was a node or an edge, and :math:`k` is the id of that element. The image (codomain) of :math:`id_G` is denoted :math:`ID_G`. There is also :math:`id_G^{-1} : ID_G \rightarrow G_{ne}`.
+For every graph $G$, the corresponding *global id function* $id_G$ maps nodes and edges (elements of $G_{ne}$) to a pair $(t,k)$, where $t \in \{n,e\}$ (isomorphic to booleans) specifies whether the given element was a node or an edge, and $k$ is the id of that element. The image (codomain) of $id_G$ is denoted $ID_G$. There is also $id_G^{-1} : ID_G \rightarrow G_{ne}$.
 
-Finally, :math:`\mathcal{ID}` is the set of all possible id's: :math:`\mathcal{ID} = \{(t,k) : t \in \{n,e\}, k \in \mathbb{N} \}`.
+Finally, $\mathcal{ID}$ is the set of all possible id's: $\mathcal{ID} = \{(t,k) : t \in \{n,e\}, k \in \mathbb{N} \}$.
 
 \textbf{Graph Identity and Isomorphism}
 
-Two graphs are *identical* if they have the same structure excluding the ordering (the indexing, the parameters :math:`n` and :math:`m` of the nodes and edges) which can differ. To be more precise, two graphs :math:`G_1, G_2` are identical if there are permutations :math:`P_n, P_e` such that:
+Two graphs are *identical* if they have the same structure excluding the ordering (the indexing, the parameters $n$ and $m$ of the nodes and edges) which can differ. To be more precise, two graphs $G_1, G_2$ are identical if there are permutations $P_n, P_e$ such that:
 
-* For all :math:`v_{n'}` nodes of :math:`G_1`, and :math:`u_n` nodes of :math:`G_2`: :math:`val( v_{P_n(n)} ) = val(u_n)`.
-* For all :math:`c_{m'}` edges of :math:`G_1`, and :math:`d_m` edges of :math:`G_2`:
+\begin{itemize}
+\item For all $v_{n'}$ nodes of $G_1$, and $u_n$ nodes of $G_2$: $val( v_{P_n(n)} ) = val(u_n)$.
+\item For all $c_{m'}$ edges of $G_1$, and $d_m$ edges of $G_2$:
 
-  * :math:`val( c_{P_e(m)} ) = val(d_m)`,
-  * :math:`source( c_{P_e(m)} ) = source(d_m)`, and
-  * :math:`dest( c_{P_e(m)} ) = dest(d_m)`.
+  \begin{itemize}
+  \item $val( c_{P_e(m)} ) = val(d_m)$,
+  \item $source( c_{P_e(m)} ) = source(d_m)$, and
+  \item $dest( c_{P_e(m)} ) = dest(d_m)$.
+  \end{itemize}
+\end{itemize}
 
 Two graphs are *isomorphic* if they have the have the same structure except for values. Precisely when there are permutations such that:
 
-For all :math:`c_{m'}` edges of :math:`G_1`, and :math:`d_m` edges of :math:`G_2`:
+For all $c_{m'}$ edges of $G_1$, and $d_m$ edges of $G_2$:
 
-* :math:`source( c_{P_e(m)} ) = source(d_m)`, and
-* :math:`dest( c_{P_e(m)} ) = dest(d_m)`.
+\begin{itemize}
+\item $source( c_{P_e(m)} ) = source(d_m)$, and
+\item $dest( c_{P_e(m)} ) = dest(d_m)$.
+\end{itemize}
 
 
 
@@ -145,57 +158,76 @@ For all :math:`c_{m'}` edges of :math:`G_1`, and :math:`d_m` edges of :math:`G_2
 
 A main feature of Graphui is supposed to be automatic layout. We'll use Graphviz's dot tool (http://www.graphviz.org/) for this purpose, until we design and implement our own layout algorithm (if ever). At first glance this means that there is no reason to store node and edge positions for a graph, because they can be automatically determined. This isn't true because
 
-#. we may want to allow the user to move elements manually,
-#. there may be different layout algorithms (such as dot vs. twopi), and
-#. some future algorithm may calculate other visual parameters (such as colors).
+\begin{enumerate}
+\item we may want to allow the user to move elements manually,
+\item there may be different layout algorithms (such as dot vs. twopi), and
+\item some future algorithm may calculate other visual parameters (such as colors).
+\end{enumerate}
 
 Last but not least, remembering the specific values calculated from the layout algorithm is useful for features other than rendering. For these reasons the visual representation includes values of parameters *after* calculating them using automatic algorithms. The definition I chose is as follows:
 
-A visual representation of a graph :math:`G` with :math:`N` nodes and :math:`M` edges, is a (total) function :math:`H : ID_G \rightarrow \mathcal{D}`, where :math:`\mathcal{D}` is the domain of visual representation data. For example, elements in :math:`D` may be :math:`n`-tuples containing information such as shape, position, size, etc. of each element in the graph. For each parameter we may choose to include a boolean value specifying whether that parameter was calculated automatically or set manually by the user. We may also choose to specify whether parameters are present or not (``Maybe a'' style).
+A visual representation of a graph $G$ with $N$ nodes and $M$ edges, is a (total) function $H : ID_G \rightarrow \mathcal{D}$, where $\mathcal{D}$ is the domain of visual representation data. For example, elements in $D$ may be $n$-tuples containing information such as shape, position, size, etc. of each element in the graph. For each parameter we may choose to include a boolean value specifying whether that parameter was calculated automatically or set manually by the user. We may also choose to specify whether parameters are present or not (``Maybe a'' style).
 
 \textbf{Annotated Graph}
 
-An annotated graph is a pair :math:`(G, H)` of a graph structure :math:`G` and a matching visual representation :math:`H`. The set of annotated graphs is denoted :math:`\mathcal{AG}`.
+An annotated graph is a pair $(G, H)$ of a graph structure $G$ and a matching visual representation $H$. The set of annotated graphs is denoted $\mathcal{AG}$.
 
 \subsubsection{Image}
-For the visual two-dimensional images that Graphui must render, we use the semantic model of a function: :math:`\mathbb{R}^2 \rightarrow Color`. This is inspired by Luke Palmer's blog post (see [Palmer08]_). The definition of :math:`Color` is unimportant (until implementation) and depends on the color model we choose, for example whether we want to include transparency.
+For the visual two-dimensional images that Graphui must render, we use the semantic model of a function: $\mathbb{R}^2 \rightarrow Color$. This is inspired by Luke Palmer's blog post (see \cite{Palmer08}). The definition of $Color$ is unimportant (until implementation) and depends on the color model we choose, for example whether we want to include transparency.
 
 \subsubsection{Graph-Image Relation}
-Every annotated graph has exactly one corresponding visual rendering (image). Thus, there is a *function* from annotated graphs to images: :math:`\mathcal{AG} \rightarrow Image`. This function is the Graphui render function.
+Every annotated graph has exactly one corresponding visual rendering (image). Thus, there is a *function* from annotated graphs to images: $\mathcal{AG} \rightarrow Image$. This function is the Graphui render function.
 
 On the other hand, to allow easier visual editing we want to associate image regions to graph elements and annotations. In general this is not a function - the render function has no inverse. Example reasons are:
 
-* No one-to-one relation between regions and elements - overlapping visual elements, such as crossing edges. 
-* Some image regions don't correspond to any element at all (empty regions). 
+\begin{itemize}
+\item No one-to-one relation between regions and elements - overlapping visual elements, such as crossing edges. 
+\item Some image regions don't correspond to any element at all (empty regions). 
+\end{itemize}
 
-Furthermore, an image alone hardly suffices to find elements in the corresponding graph. We need the information that was used to render the image from the graph, not the image itself - and this information is exactly the visual representation. Consequently, a possible definition is (using the curried function form) for the Graphui image mapping function is: a partial function of the form :math:`\mathcal{AG} \rightarrow \mathbb{R}^2 \rightarrow \mathcal{ID}`.
+Furthermore, an image alone hardly suffices to find elements in the corresponding graph. We need the information that was used to render the image from the graph, not the image itself - and this information is exactly the visual representation. Consequently, a possible definition is (using the curried function form) for the Graphui image mapping function is: a partial function of the form $\mathcal{AG} \rightarrow \mathbb{R}^2 \rightarrow \mathcal{ID}$.
 
-Given a specific annotated graph :math:`(G,H)`, the image mapping function has only one argument, and is: :math:`\mathbb{R}^2 \rightarrow ID_G`.
+Given a specific annotated graph $(G,H)$, the image mapping function has only one argument, and is: $\mathbb{R}^2 \rightarrow ID_G$.
 
 
 \subsubsection{The Reactive Part}
 We know how to render graphs and we know how to relate areas in the rendered image back to graph elements and their annotations. To summarize what we have so far:
 
-* Annotated graphs,
-* The render function: a function from annotated graphs to images,
-* The image mapping function: given an annotated graph it is a function from image coordinates to graph element id's.
+\begin{itemize}
+\item Annotated graphs,
+\item The render function: a function from annotated graphs to images,
+\item The image mapping function: given an annotated graph it is a function from image coordinates to graph element id's.
+\end{itemize}
 
-What we are missing is the *reactive* part of the system, which deals with user interaction. We will use the FRP approach (see [Elliott09b]_) to model this part. The only way for the user to interact with the program is through the mouse and keyboard. We can model both using behaviors and events. We are going to implement Graphui using Yampa [HudakEtAl03]_, which follows a slightly different model, but it is almost equivalent and we'll leave any neccesary "conversions" to the implementation. As a reminder, we are now discussing the semantic model only.
+What we are missing is the *reactive* part of the system, which deals with user interaction. We will use the FRP approach (see \cite{Elliott2009-push-pull-frp}) to model this part. The only way for the user to interact with the program is through the mouse and keyboard. We can model both using behaviors and events. We are going to implement Graphui using Yampa (\cite{hudak_arrows_2003}), which follows a slightly different model, but it is almost equivalent and we'll leave any neccesary "conversions" to the implementation. As a reminder, we are now discussing the semantic model only.
 
 \textbf{Mouse and Keyboard}
 
-* The mouse's position is modeled as a behavior, a function from time to coordinates: :math:`Time \rightarrow \mathbb{R}^2`.
-* Mouse clicks are events, sequences of pairs :math:`[(Time, E)]` where :math:`E` contains the event data (which button, press or unpress, etc.)
+\begin{itemize}
+\item The mouse's position is modeled as a behavior, a function from time to coordinates: $Time \rightarrow \mathbb{R}^2$.
+\item Mouse clicks are events, sequences of pairs $[(Time, E)]$ where $E$ contains the event data (which button, press or unpress, etc.)
+\end{itemize}
 
 Keyboard key presses are modeled as events, similar to mouse clicks.
 
+
 \textbf{Animation}
-To implement an animated visual interface, one of the system's output must be an animation. We define animation as a time-dependant function (behavior): :math:`Time -> Image`.
+
+To implement an animated visual interface, one of the system's output must be an animation. We define animation as a time-dependant function (behavior): $Time -> Image$.
+
+\begin{figure}[h]
+  \label{ref:graphui-design1}
+  \begin{center}
+    \includegraphics[scale=0.3]{design-test1.png}
+  \end{center}
+  \caption{Graphui Top-level design}
+\end{figure}
 
 \textbf{Graphui's Reactive Operation}
+
 The user interacts by clicking on the rendered image (or other GUI elements on the screen) or by using the keyboard, to change the annotated graph. The change in the annotated graph in turn causes a new image to be rendered or some GUI elements to appear or disappear, and also may change the input handling of the program. For example, the user may enter a mode or menu in which some keys have different meanings or are disabled.
 
-Following Yampa [HudakEtAl03]_, we can describe our reactive system as a graph of "signal transformers", elements that transform time varying values. The top level design is as follows:
+Following Yampa (\cite{hudak_arrows_2003}), we can describe our reactive system as a graph of "signal transformers", elements that transform time varying values. The top level design is as follows:
 
 \begin{enumerate}
 \item Input behaviors and events (such as mouse clicks and position) are interpreted and translated to GUI behaviors and events. For example, instead of speaking in terms of mouse clicks we want terms such as: button pressed/released, focus received, etc.
@@ -203,14 +235,17 @@ Following Yampa [HudakEtAl03]_, we can describe our reactive system as a graph o
 \item The new annotated graph (or updated GUI state) affects what is displayed on the screen.
 \end{enumerate}
 
-.. _graphui-design1-figure:
+For feedback as shown in \ref{ref:graphui-design1}, Yampa offers a delayed switching mechanism which ensures that the result of the computation that is fed-back is used in the "infinitisemal" future, and not again in the current step. 
 
-.. figure:: design-test1.png
+\subsection{Implementation}
+After learning to use Haskell and Yampa, the implementation of Graphui \emph{itself} was more or less straightforward following the design described above. Animation was not implemented - it turned out to be a rather complicated task using Yampa's switching primitives. The source code is available at http://github.com/sinelaw/graphui.
 
-   Top-level design proposal
+\subsection{Conclusions after writing the Graphui prototype}
+The main challenge when implementing Graphui was learning to use Yampa, and learning to program in Haskell in general. Yampa's documentation is out of date, the library itself is messy and contains many redundancies, and all work on it seems to have stopped two or three years ago. Recent work on Yampa is mostly research-oriented regarding ways to re-design the library. 
 
-For feedback as shown in :ref:`graphui-design1-figure`, Yampa offers a delayed switching mechanism which ensures that the result of the computation that is fed-back is used in the "infinitisemal" future, and not again in the current step. 
+My conclusion is that despite Yampa being a \emph{relatively} mature FRP library, it lacks greatly on the semantic clarity front. FRP is all about precision in the semantic model, and the disadvantage of Yampa in this regard is too great. It is possible the the disadvantage lays mainly in documentation issues (no clear description of the semantics is given anywhere) but as it is, the library does not represent the direction I would like to pursue under the title of FRP. Unfotunately no other FRP library that's sufficiently powerful exists to date.\footnote{Although two potential contenders for \emph{testing} purposes have lately been released: Elerea (eventless reactivity) and Peakachu, both available on http://hackage.haskell.org/}
 
+Consequently, I have decided to implement a minimal library that will support only the primtives required by my project. In addition I have explored one of the question that arises when designing FRP semantics in section \ref{sec:behave}.
 
 \section{Gradual Accumulation of Memory}
 \label{sec:behave}
@@ -403,7 +438,7 @@ Yet, in some intuitive sense, time delay seems like a realistic operation, one t
 
 \subsubsection{Band-limited signals}
 \label{sec:bandlimit}
-We made an effort to deal with the continuous-time, non-discrete-value case. A point to consider is whether for some temporal values, sampling is sufficient. Recall Nyquist's theorem, which states that every signal (a function of time, specifically $\mathbb{R} \rightarrow \mathbb{R}$) whose Fourier transform is zero outside some finite interval, can be sampled and later reconstructed exactly. The condition is that the sampling rate be greater than twice the highest frequency in the signal. Signals satisfying the aforementioned condition are said to be \emph{band-limited}, and all the signals (temporal values) we normally deal with are band-limited. Therefore, apparently we can simply sample our continuous-time temporal values at some sufficiently high sampling frequency, and the samples will contain (and indeed do contain) all the necessary information about the signal, in a discrete-time equivalent form. However, ideal reconstruction\footnote{Shannon interpolation, if sampling is uniformly spaced} from samples to continuous-time signals is \emph{not} causal! This means that we can't meaningfully say that Nyquist sampling represents exactly the original signal, if future samples are not all known.
+We made an effort to deal with the continuous-time, non-discrete-value case. A point to consider is whether for some temporal values, sampling is sufficient. Recall Nyquist's theorem, which states that every signal (a function of time, specifically $\mathbb{R} \rightarrow \mathbb{R}$) whose Fourier transform is zero outside some finite interval, can be sampled and later reconstructed exactly. The condition is that the sampling rate be greater than twice the highest frequency in the signal. Signals satisfying the aforementioned condition are said to be \emph{band-limited}, and all the signals (temporal values) we normally deal with are band-limited. Therefore, apparently we can simply sample our continuous-time temporal values at some sufficiently high sampling frequency, and the samples will contain (and indeed do contain) all the necessary information about the signal, in a discrete-time equivalent form. However, ideal reconstruction\footnote{Shannon interpolation, if sampling is uniformly spaced.} from samples to continuous-time signals is \emph{not} causal! This means that we can't meaningfully say that Nyquist sampling represents exactly the original signal, if future samples are not all known.
 
 \subsubsection{Computability and continuous functions}
 As explained in \cite{bauer_sometimes_2007}, computable functions are all continuous. Continuous functions can be approximated to arbitrary precision, as the precision of the function's argument approaches infinite precision. On the other hand, non-continuous functions do not have this property. Consider a step function such as $sign(x)$, which is $-1$ for $x<0$ and $1$ at $x \ge 0$. To know the value of the function in the neighborhood of $0$ even at the ``rough'' precision of just knowing whether the result is closer to $-1$ or to $1$, we need to know the argument at infinite precision. For example, if the argument's digits are $-0.000000\ldots$, we need to know ``till the end'' whether the number is really just \emph{zero}, or whether there's a $1$ somewhere that makes it a negative number. Thus, to know anything at all about the function's value around zero we may need infinite information about the exact location. How, if at all, should this fact alter our model? Do we need to assume that all temporal values are continuous (eliminating the class of ``step functions'' of continuous-time completely)?
@@ -417,6 +452,74 @@ In this section, we have discussed the following points:
 \end{itemize}
 Finally we have mentioned a few open questions (for me at least) relating to the main discussion. It is my hope that this short section will inspire more rigorous, deeper insights into FRP by the readers.
 
+
+\section{Binding Haskell to OpenCV, and the Processor module}
+\label{sec:opencv}
+
+One of the requirements for this project is an ability to process video inside the Haskell language. To this end I have created two Haskell ``cabal packages'' (a distribution format): HOpenCV, and cv-combinators. 
+
+\subsection{HOpenCV}
+The HOpenCV package is a low-level Haskell binding to OpenCV. The term ``low-level binding'' in Haskell usually means an ability to call the external library's (in this case, OpenCV's) functions from Haskell as we would call them from C. This function-wrapping is exactly what HOpenCV is about. To make things a little bit nicer for Haskell users, HOpenCV supplies a thin wrapping interface for some of the functions (such as when the function requires passing a double pointer). 
+
+Binding Haskell to OpenCV was done using manually written code that uses Haskell FFI (Foreign Function Interface). To make things easier a C-side thin wrapper is used in some cases. HOpenCV currently binds only a small part of the huge set of functions that OpenCV provides. The library has been tested minimally - almost all of the bound OpenCV functions have been tested succesfully, albeit manually. The library is currently ~400 lines of Haskell and FFI code, plus ~120 lines of C code.
+
+The complete code and some documentation for HOpenCV has been published on the public Haskell package repository, at http://hackage.haskell.org/package/HOpenCV-0.11
+
+Finally, a small test program that demonstrates edge detection from a live camera capture and on-screen display was implemented using HOpenCV. It is reproduced here to show the imperative (sequential) nature of HOpenCV, which provides motivation for the implementation of cv-combinators, as described in subsection \ref{subsec:cv-comb}.
+
+\begin{code}
+module Main where
+
+import Foreign.Ptr
+import Foreign.ForeignPtr
+import Foreign.C.Types
+
+import AI.CV.OpenCV.CxCore
+import AI.CV.OpenCV.CV
+import AI.CV.OpenCV.HighGui
+
+import Control.Monad(when)
+
+showFrames :: CInt -> Ptr IplImage -> Ptr CvCapture -> IO ()
+showFrames winNum targetImage cvcapture  = do
+  frame <- cvQueryFrame cvcapture 
+  cvConvertImage (fromArr frame) (fromArr targetImage) 0
+  calcFrame targetImage
+      where calcFrame targetSmall = do
+              cvResize targetImage targetSmall CV_INTER_LINEAR
+              cvCanny targetSmall targetSmall 30 190 3
+              showImage winNum targetSmall
+              key <- waitKey 5
+              when (key == -1) (showFrames winNum targetImage cvcapture)
+
+  
+processImages :: Ptr CvCapture -> IO ()
+processImages capture = do
+  frame <- cvQueryFrame capture
+  let winNum = 0
+  newWindow winNum True
+  target <- createImageF (cvGetSize frame) 1 iplDepth8u
+  withForeignPtr target (\target' -> showFrames winNum target' capture) 
+    
+main :: IO ()
+main = do
+  capture <- createCameraCaptureF 0
+  withForeignPtr capture processImages
+\end{code}
+
+\subsection{cv-combinators}
+\label{subsec:cv-comb}
+
+The low-level library HOpenCV supplies an imperative, or sequential, interface to computer vision functions. For example, to perform edge detection we must:
+\begin{enumerate}
+\item Create the output window
+\item Create the camera object
+\item Allocate space for the output image
+\item Repeatedly: query for a new frame from the camera, perform edge detection into the allocated target, and display the result.
+\item Release all allocated resources.
+\end{enumerate}
+
+The cv-combinators library provides a highly generic module, Processor, which allows constructing a functional interface for performing operations of the form: allocate-process-release.
 
 
 \bibliographystyle{IEEEtran}

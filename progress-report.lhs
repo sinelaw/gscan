@@ -41,6 +41,8 @@
 \maketitle
 
 \tableofcontents
+\listoffigures
+\pagebreak
 
 \section{Progress Report}
 This report summarizes the progress on the project. For detailed information about the project see the appended preliminary report. 
@@ -49,7 +51,7 @@ This report summarizes the progress on the project. For detailed information abo
 At this point, I have:
 \begin{enumerate}
 \item Written a moderately complex test program using Yampa.
-\item Researched one aspect of FRP, and wrote a report about it, which is included here as section \ref{sec:behave}.
+\item Researched one aspect of FRP, and wrote a report about it, which is included here as Section \ref{sec:behave}.
 \item Implemented HOpenCV: Low-level Haskell bindings to OpenCV (not comprehensive, but enough for this project and easily extensible).
 \item Implemented a general framework for chaining operations that require resources (the Processor module).
 \item Used the Processor module to write a functional wrapping of HOpenCV, called ImageProcessors.
@@ -57,12 +59,12 @@ At this point, I have:
 
 \subsubsection{Surprises and delays}
 \label{subsec:delays}
-After writing the test program, I have concluded that Yampa is not a suitable framework for FRP for various reasons detailed in section \ref{sec:graphui}. As a result, a lot more work has to be done in order to complete an FRP-ish implemenation of the robotic system.
+After writing the test program, I have concluded that Yampa is not a suitable framework for FRP for various reasons detailed in Section \ref{sec:graphui}. As a result, a lot more work has to be done in order to complete an FRP-ish implemenation of the robotic system.
 
 In addition, two unplanned things have hindered the progress of this project relative to schedule:
 \begin{enumerate}
 \item Unexpected work load on other study duties: the courses I took in the first semester were much more demanding than I have expected, and almost no work was performed in that time until the end of the exam period. This work load resulted in a delay of more than a month on the project's schedule.
-\item Binding the video hardware to Haskell in a functionally clean interface turned out to be more complex than expected. The work is mostly done on this front, and is detailed in section \ref{sec:opencv}.
+\item Binding the video hardware to Haskell in a functionally clean interface turned out to be more complex than expected. The work is mostly done on this front, and is detailed in Section \ref{sec:opencv}.
 \end{enumerate}
 
 The following sections describe the progress in more detail.
@@ -73,10 +75,10 @@ The first stage of the project plan was to implement the robotic system using FR
 
 We enumerate the status of the sub-tasks that are part of the current stage, Stage 1:
 \begin{enumerate}
-\item Test program - ``Implementation of a simple robotic program using Yampa FRP''. The test program I chose to work on was not robotic, to limit the scope of the work to the original intention: testing Yampa FRP. I have completed this tasks succesfully with the design and implementation of the Graphui graph visual editor prototype, as detailed in section \ref{sec:graphui}.
+\item Test program - ``Implementation of a simple robotic program using Yampa FRP''. The test program I chose to work on was not robotic, to limit the scope of the work to the original intention: testing Yampa FRP. I have completed this tasks succesfully with the design and implementation of the Graphui graph visual editor prototype, as detailed in Section \ref{sec:graphui}.
 \item ``Detailed design of the robot's controlling program, using FRP abstractions.'' This task turned out to be slightly inappropriately placed, and should have been scheduled after the I/O modules, due to lack of information on the available primtives. Furthermore, FRP's advantage is that design and implementation are nearly the same task, so we can safely erase this task from our to-do list.
 \item ``Detailed test specification'' - this task was also misplaced, and will be carried out when the rest of this stage (tasks on this list) are completed.
-\item  \textbf{In progress}: ``I/O modules - Implementation of the input/output modules for communication between the controlling program and the RMP (the robot platform), and for receiving video input from the USB video camera.'' This is the task that is currently being worked on. The video I/O part has been completed, with additional, unplanned work on binding Haskell to OpenCV to allow video processing. This task is detailed in section \ref{sec:opencv}. No work has begun on binding Haskell to the robotic hardware via usb, but it seems much simpler, also because now the video issue has been mostly resolved and understood.
+\item  \textbf{In progress}: ``I/O modules - Implementation of the input/output modules for communication between the controlling program and the RMP (the robot platform), and for receiving video input from the USB video camera.'' This is the task that is currently being worked on. The video I/O part has been completed, with additional, unplanned work on binding Haskell to OpenCV to allow video processing. This task is detailed in Section \ref{sec:opencv}. No work has begun on binding Haskell to the robotic hardware via usb, but it seems much simpler, also because now the video issue has been mostly resolved and understood.
 \item ``Implementation using Yampa'' - one result of the test program was that Yampa has been found inappropriate, so there is much more work in this stage. The groundwork has begun with the implementation of the Processor module as detailed in \ref{sec:opencv}.
 \item ``Testing'' - to be performed when all other tasks are completed.
 \end{enumerate}
@@ -93,7 +95,7 @@ We enumerate the status of the sub-tasks that are part of the current stage, Sta
 The budget does not require any change, as I still believe the project can be completed within the work-hour budget described in the preliminary report.
 
 
-The timetable needs a 1.5-month shift due to the reasons explained subsection \ref{subsec:delays}. The original timetable is shown on page 30 of the appended preliminary report. The updated plan is shown in figure \ref{fig:plan}.
+The timetable needs a 1.5-month shift due to the reasons explained Subsection \ref{subsec:delays}. The original timetable is shown on page 30 of the appended preliminary report. The updated plan is shown in Figure \ref{fig:plan}.
 
 
 
@@ -264,7 +266,7 @@ The main challenge when implementing Graphui was learning to use Yampa, and lear
 
 My conclusion is that despite Yampa being a \emph{relatively} mature FRP library, it lacks greatly on the semantic clarity front. FRP is all about precision in the semantic model, and the disadvantage of Yampa in this regard is too great. It is possible the the disadvantage lays mainly in documentation issues (no clear description of the semantics is given anywhere) but as it is, the library does not represent the direction I would like to pursue under the title of FRP. Unfotunately no other FRP library that's sufficiently powerful exists to date.\footnote{Although two potential contenders for \emph{testing} purposes have lately been released: Elerea (eventless reactivity) and Peakachu, both available on http://hackage.haskell.org/}
 
-Consequently, I have decided to implement a minimal library that will support only the primtives required by my project. In addition I have explored one of the question that arises when designing FRP semantics in section \ref{sec:behave}.
+Consequently, I have decided to implement a minimal library that will support only the primtives required by my project. In addition I have explored one of the question that arises when designing FRP semantics in Section \ref{sec:behave}.
 
 \section{Gradual Accumulation of Memory}
 \label{sec:behave}
@@ -484,7 +486,7 @@ Binding Haskell to OpenCV was done using manually written code that uses Haskell
 
 The complete code and some documentation for HOpenCV has been published on the public Haskell package repository, at http://hackage.haskell.org/package/HOpenCV-0.11
 
-Finally, a small test program that demonstrates edge detection from a live camera capture and on-screen display was implemented using HOpenCV. It is reproduced here (see Figure \ref{code:Test}) to show how the library is used. Specifically this example demonstrates the imperative (sequential) nature of HOpenCV, which provides motivation for the implementation of cv-combinators, as described in subsection \ref{subsec:cv-comb}.
+Finally, a small test program that demonstrates edge detection from a live camera capture and on-screen display was implemented using HOpenCV. It is reproduced here (see Figure \ref{code:Test}) to show how the library is used. Specifically this example demonstrates the imperative (sequential) nature of HOpenCV, which provides motivation for the implementation of cv-combinators, as described in Subsection \ref{subsec:cv-comb}.
 
 \floatstyle{boxed}  \restylefloat{figure}
 \begin{figure}[h]
@@ -581,11 +583,11 @@ The arguments to the constructor are:
 \end{enumerate}
 
 
-The Processor data type is an instance of Category, Functor, Applicative and Arrow. These are very general typeclasses in the common Haskell library. It is out of the scope of this report to detail the interfaces that these typeclasses provide or to discuss their usefulness, but the mere fact that we instantiate them menas that we can automatically use any library that was designed for them on our own Processor data type. The code of the Processor module is appended in \ref{apx:Processor}.
+The Processor data type is an instance of Category, Functor, Applicative and Arrow. These are very general typeclasses in the common Haskell library. It is out of the scope of this report to detail the interfaces that these typeclasses provide or to discuss their usefulness, but the mere fact that we instantiate them menas that we can automatically use any library that was designed for them on our own Processor data type. The code of the Processor module is appended in \ref{code:Processor}.
 
 
 \subsubsection{The ImageProcessors Module}
-Once I have succesfully implemented Processor, it was almost trivial to start wrapping various OpenCV primitives by combining HOpenCV with the composable power of the Processor module. We present here as an example wrapping, the one for cvCanny in figure \ref{code:canny}
+Once I have succesfully implemented Processor, it was almost trivial to start wrapping various OpenCV primitives by combining HOpenCV with the composable power of the Processor module. We present here as an example wrapping, the one for cvCanny in Figure \ref{code:canny}
 
 \floatstyle{boxed}  \restylefloat{figure}
 \begin{figure}[h]
@@ -611,12 +613,17 @@ canny thres1 thres2 size = processor processCanny allocateCanny convertState rel
             CxCore.cvReleaseImage gray
             CxCore.cvReleaseImage target
 \end{code}
-\caption{Wrapping cvCanny as a processor; code taken from ImageProcessors.hs of the cv-combinators package}
+\caption{Wrapping cvCanny as a processor}[Wrapping cvCanny as a processor. Code taken from ImageProcessors.hs of the cv-combinators package]
 \label{code:canny}
 \end{figure}
 \floatstyle{plain}  \restylefloat{figure}
 
-The final result is beautifully simple to use. A test program that performs face detection and displays the result on a live window output was written using ImageProcessors. Compare the program in figure \ref{code:imagproc-test}, which uses cv-combinators, to any other implementation that uses OpenCV: I challenge the reader to find a simpler one!
+The final result is beautifully simple to use. A test program that performs face detection and displays the result on a live window output was written using ImageProcessors. Compare the program in Figure \ref{code:imagproc-test}, which uses cv-combinators, to any other implementation that uses OpenCV: I challenge the reader to find a simpler one! The crucial line is the implementation of the main function, which is as simple as:
+\begin{code}
+main = runTillKeyPressed (camera 0 --< (second faceDetect) >>> drawRects >>> window 0) 
+\end{code}
+
+The function takes a camera, duplicates its output, feeds one of them through face detection and the other is left unchanged (``second'' does that). Then, the pair of outputs from faceDetect and the camera's untouched output are fed into drawRects, which draws rectangles around the faces. The end result is fed into a window.
 
 
 \floatstyle{boxed}  \restylefloat{figure}
@@ -660,6 +667,7 @@ The project is behind the schedule as defined in the preliminary report, but so 
 
 
 \section{Source Code: The Processor Module}
+\label{code:Processor}
 \textbf{Note:} Most of the comments from the codes have been removed due to technical TeX problems. The full source code is available at http://github.com/sinelaw/cv-combinators.
 
 \begin{code}
@@ -838,6 +846,8 @@ runWith f (Processor pf af cf rf) a = do
         rf x
         return b'
 \end{code}
+
+\pagebreak
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

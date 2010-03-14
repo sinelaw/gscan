@@ -27,6 +27,7 @@
 
 \begin{document}
 
+\floatstyle{boxed}  \restylefloat{code}
 
 \begin{figure}[h!]
   \begin{center}
@@ -54,6 +55,8 @@ At this point, I have:
 \item Used the Processor module to write a functional wrapping of HOpenCV, called ImageProcessors.
 \end{enumerate}
 
+\subsubsection{Surprises and delays}
+\label{subsec:delays}
 After writing the test program, I have concluded that Yampa is not a suitable framework for FRP for various reasons detailed in section \ref{sec:graphui}. As a result, a lot more work has to be done in order to complete an FRP-ish implemenation of the robotic system.
 
 In addition, two unplanned things have hindered the progress of this project relative to schedule:
@@ -77,6 +80,22 @@ We enumerate the status of the sub-tasks that are part of the current stage, Sta
 \item ``Implementation using Yampa'' - one result of the test program was that Yampa has been found inappropriate, so there is much more work in this stage. The groundwork has begun with the implementation of the Processor module as detailed in \ref{sec:opencv}.
 \item ``Testing'' - to be performed when all other tasks are completed.
 \end{enumerate}
+
+\begin{figure}[h]
+\label{fig:plan}
+  \begin{center}
+    \includegraphics[scale=0.7]{./updated-plan.pdf}
+  \end{center}
+  \caption{Updated time plane.}
+\end{figure}
+
+\subsection{Budget and Timetable Updates}
+The budget does not require any change, as I still believe the project can be completed within the work-hour budget described in the preliminary report.
+
+
+The timetable needs a 1.5-month shift due to the reasons explained subsection \ref{subsec:delays}. The original timetable is shown on page 30 of the appended preliminary report. The updated plan is shown in figure \ref{fig:plan}.
+
+
 
 
 \section{Graphui: The Visual Graph Editor}
@@ -458,15 +477,17 @@ Finally we have mentioned a few open questions (for me at least) relating to the
 
 One of the requirements for this project is an ability to process video inside the Haskell language. To this end I have created two Haskell ``cabal packages'' (a distribution format): HOpenCV, and cv-combinators. 
 
-\subsection{HOpenCV}
+\subsection{Package: HOpenCV}
 The HOpenCV package is a low-level Haskell binding to OpenCV. The term ``low-level binding'' in Haskell usually means an ability to call the external library's (in this case, OpenCV's) functions from Haskell as we would call them from C. This function-wrapping is exactly what HOpenCV is about. To make things a little bit nicer for Haskell users, HOpenCV supplies a thin wrapping interface for some of the functions (such as when the function requires passing a double pointer). 
 
 Binding Haskell to OpenCV was done using manually written code that uses Haskell FFI (Foreign Function Interface). To make things easier a C-side thin wrapper is used in some cases. HOpenCV currently binds only a small part of the huge set of functions that OpenCV provides. The library has been tested minimally - almost all of the bound OpenCV functions have been tested succesfully, albeit manually. The library is currently ~400 lines of Haskell and FFI code, plus ~120 lines of C code.
 
 The complete code and some documentation for HOpenCV has been published on the public Haskell package repository, at http://hackage.haskell.org/package/HOpenCV-0.11
 
-Finally, a small test program that demonstrates edge detection from a live camera capture and on-screen display was implemented using HOpenCV. It is reproduced here to show the imperative (sequential) nature of HOpenCV, which provides motivation for the implementation of cv-combinators, as described in subsection \ref{subsec:cv-comb}.
+Finally, a small test program that demonstrates edge detection from a live camera capture and on-screen display was implemented using HOpenCV. It is reproduced here (see Figure \ref{code:Test}) to show how the library is used. Specifically this example demonstrates the imperative (sequential) nature of HOpenCV, which provides motivation for the implementation of cv-combinators, as described in subsection \ref{subsec:cv-comb}.
 
+\floatstyle{boxed}  \restylefloat{figure}
+\begin{figure}[h]
 \begin{code}
 module Main where
 
@@ -506,8 +527,12 @@ main = do
   capture <- createCameraCaptureF 0
   withForeignPtr capture processImages
 \end{code}
+\caption{Test.hs - test program for HOpenCV}
+\label{code:Test}
+\end{figure}
+\floatstyle{plain}  \restylefloat{figure}
 
-\subsection{cv-combinators}
+\subsection{Package: cv-combinators}
 \label{subsec:cv-comb}
 
 The low-level library HOpenCV supplies an imperative, or sequential, interface to computer vision functions. For example, to perform edge detection we must:
@@ -519,8 +544,300 @@ The low-level library HOpenCV supplies an imperative, or sequential, interface t
 \item Release all allocated resources.
 \end{enumerate}
 
+\subsubsection{The Processor Module}
 The cv-combinators library provides a highly generic module, Processor, which allows constructing a functional interface for performing operations of the form: allocate-process-release.
 
+The Processor module allows us to compose operations without minding the order of resource allocation and release. We can write code such as:
+\begin{code}
+a >>> b --< (c *** d)
+\end{code}
+where a, b, c and d are processors. This example is equivalent to passing connecting a's output to b's input, duplicating b's output and sending it into c and d in parallel.\footnote{The actual implementation does not parallelize operations in runtime (by utilizing multi-core, for example), but it's not a difficult task to add that feature due to the module's design.} In our project, the processors will be cameras, image processing tranformations, and outputs units.
+
+The semantic model for a Processor is: 
+
+\begin{code}
+[[ Processor m a b ]] = a -> b
+\end{code}
+
+The idea is that the monad m is usually IO, and that a and b are usually pointers.
+It is meant for functions that require a pre-allocated output pointer to operate.
+
+\begin{itemize}
+\item a, b = the input and output types of the processor (think $a \rightarrow b$)
+\item m = monad in which the processor operates
+\item x = type of internal state  
+\end{itemize}
+
+The arguments to the constructor are:
+
+\begin{enumerate}
+\item Processing function: Takes input and internal state, and returns new internal state.
+
+\item Allocator for internal state (this is run only once): Takes (usually the first) input, and returns initial internal state.
+
+\item Convertor from state x to output b: Takes internal state and returns the output.
+
+\item Releaser for internal state (finalizer, run once): Run after processor is done being used, to release the internal state.
+\end{enumerate}
+
+
+The Processor data type is an instance of Category, Functor, Applicative and Arrow. These are very general typeclasses in the common Haskell library. It is out of the scope of this report to detail the interfaces that these typeclasses provide or to discuss their usefulness, but the mere fact that we instantiate them menas that we can automatically use any library that was designed for them on our own Processor data type. The code of the Processor module is appended in \ref{apx:Processor}.
+
+
+\subsubsection{The ImageProcessors Module}
+Once I have succesfully implemented Processor, it was almost trivial to start wrapping various OpenCV primitives by combining HOpenCV with the composable power of the Processor module. We present here as an example wrapping, the one for cvCanny in figure \ref{code:canny}
+
+\floatstyle{boxed}  \restylefloat{figure}
+\begin{figure}[h]
+\begin{code}
+canny :: Int  -- Threshold 1
+         -> Int  -- Threshold 2
+         -> Int  -- Size
+         -> ImageProcessor
+canny thres1 thres2 size = processor processCanny allocateCanny convertState releaseState
+    where processCanny src (gray, dst) = do
+            HighGui.cvConvertImage src gray 0 
+            CV.cvCanny gray dst (fromIntegral thres1) (fromIntegral thres2) (fromIntegral size)
+            return (gray, dst)
+            
+          allocateCanny src = do
+            target <- CxCore.cvCreateImage (CxCore.cvGetSize src) 1 CxCore.iplDepth8u
+            gray <- CxCore.cvCreateImage (CxCore.cvGetSize src) 1 CxCore.iplDepth8u
+            return (gray, target)
+            
+          convertState = do return . snd
+                            
+          releaseState (gray, target) = do
+            CxCore.cvReleaseImage gray
+            CxCore.cvReleaseImage target
+\end{code}
+\caption{Wrapping cvCanny as a processor; code taken from ImageProcessors.hs of the cv-combinators package}
+\label{code:canny}
+\end{figure}
+\floatstyle{plain}  \restylefloat{figure}
+
+The final result is beautifully simple to use. A test program that performs face detection and displays the result on a live window output was written using ImageProcessors. Compare the program in figure \ref{code:imagproc-test}, which uses cv-combinators, to any other implementation that uses OpenCV: I challenge the reader to find a simpler one!
+
+
+\floatstyle{boxed}  \restylefloat{figure}
+\begin{figure}[h]
+\begin{code}
+module Main where
+
+
+import AI.CV.ImageProcessors
+
+import qualified AI.CV.OpenCV.CV as CV
+import qualified AI.CV.Processor as Processor
+import AI.CV.Processor((--<))
+import AI.CV.OpenCV.Types
+import AI.CV.OpenCV.CxCore(CvRect(..), CvSize(..))
+
+import Prelude hiding ((.),id)
+import Control.Arrow
+import Control.Category
+
+faceDetect :: Processor.Processor IO PImage [CvRect]
+faceDetect = haarDetect "path-to-cascade.xml" 1.2 3 CV.cvHaarDoCannyPruning (CvSize 50 50)
+  
+main :: IO ()
+main = runTillKeyPressed (camera 0 --< (second faceDetect) >>> drawRects >>> window 0) 
+\end{code}
+\caption{Test module for cv-combinators, which performs face detection.}
+\label{code:imagproc-test}
+\end{figure}
+\floatstyle{plain}  \restylefloat{figure}
+
+\subsection{HOpenCV and cv-combinators: Conclusion}
+The packages implemented are extensible, as general as can be, and simple to use. The code is available on hackage (http://hackage.haskell.org). It is my hope that these packages will serve the Haskell / computer vision community well and will mature in the future to a stable, comprehensive state. I have learnt a lot by implementing this initial version of the packages.
+
+With these packages laid down as fundamentals I feel much more confident to proceed in the implementation of the robotic system using Haskell.
+
+
+\section{Conclusion}
+The project is behind the schedule as defined in the preliminary report, but so much progress has been made that it is hard to say that the project is advancing slowly. Rather, the amount of work was unanticipated, especially the suprise realization that Yampa is not a suitable framework for this project. I will continue to work on the tasks defined in the preliminary report.
+
+
+
+\section{Source Code: The Processor Module}
+\textbf{Note:} Most of the comments from the codes have been removed due to technical TeX problems. The full source code is available at http://github.com/sinelaw/cv-combinators.
+
+\begin{code}
+module AI.CV.Processor where
+
+import Prelude hiding ((.),id)
+
+import Control.Category
+import Control.Applicative hiding (empty)
+import Control.Arrow
+
+import Control.Monad(liftM, join)
+
+data Processor m a b where
+    Processor :: Monad m => (a -> x -> m x) -> (a -> m x) -> (x -> m b) -> (x -> m ()) -> (Processor m a b)
+    
+processor :: (Monad m) =>
+             (a -> x -> m x) -> (a -> m x) -> (x -> m b) -> (x -> m ())
+          -> Processor m a b
+processor = Processor
+
+--  Chains two processors serially, so one feeds the next.
+chain :: (Monad m) => Processor m a b'  -> Processor m b' b -> Processor m a b
+chain (Processor pf1 af1 cf1 rf1) (Processor pf2 af2 cf2 rf2) = processor pf3 af3 cf3 rf3
+    where pf3 a (x1,x2) = do
+            x1' <- pf1 a x1
+            b'  <- cf1 x1
+            x2' <- pf2 b' x2
+            return (x1', x2')
+            
+          af3 a = do
+            x1 <- af1 a
+            b' <- cf1 x1
+            x2 <- af2 b'
+            return (x1,x2)
+            
+          cf3 (_,x2) = do
+            b <- cf2 x2
+            return b
+            
+          rf3 (x1,x2) = do
+            rf2 x2
+            rf1 x1
+  
+-- A processor that represents two sub-processors in parallel (although the current implementation runs them sequentially, but that may change in the future)
+parallel :: (Monad m) => Processor m a b -> Processor m c d -> Processor m (a,c) (b,d)
+parallel (Processor pf1 af1 cf1 rf1) (Processor pf2 af2 cf2 rf2) = processor pf3 af3 cf3 rf3
+    where pf3 (a,c) (x1,x2) = do
+            x1' <- pf1 a x1
+            x2' <- pf2 c x2
+            return (x1', x2')
+            
+          af3 (a,c) = do
+            x1 <- af1 a
+            x2 <- af2 c
+            return (x1,x2)
+            
+          cf3 (x1,x2) = do
+            b  <- cf1 x1
+            d <- cf2 x2
+            return (b,d)
+            
+          rf3 (x1,x2) = do
+            rf2 x2
+            rf1 x1
+
+forkJoin :: (Monad m) => Processor m a b  -> Processor m a b' -> Processor m a (b,b')
+forkJoin (Processor pf1 af1 cf1 rf1) (Processor pf2 af2 cf2 rf2) = processor pf3 af3 cf3 rf3
+    where pf3 a (x1,x2) = do
+            x1' <- pf1 a x1
+            x2' <- pf2 a x2
+            return (x1', x2')
+            
+          af3 a = do
+            x1 <- af1 a
+            x2 <- af2 a
+            return (x1,x2)
+            
+          cf3 (x1,x2) = do
+            b  <- cf1 x1
+            b' <- cf2 x2
+            return (b,b')
+            
+          rf3 (x1,x2) = do
+            rf2 x2
+            rf1 x1
+
+
+-------------------------------------------------------------
+--   The identity processor: output = input. Semantically, [[ empty ]] = id
+empty :: Monad m => Processor m a a
+empty = processor pf af cf rf
+    where pf _ = do return
+          af   = do return
+          cf   = do return
+          rf _ = do return ()
+               
+instance Monad m => Category (Processor m) where
+  (.) = flip chain
+  id  = empty
+  
+instance Monad m => Functor (Processor m a) where
+  -- This could have used fmap internally as a Type Class Morphism, but monads don't neccesary implement the obvious: fmap = liftM.
+  fmap f (Processor pf af cf rf) = processor pf af cf' rf
+    where cf' x = liftM f (cf x) 
+
+--   Splits (duplicates) the output of a functor, or on this case a processor.
+split :: Functor f => f a -> f (a,a)
+split = (join (,) <\$>)
+
+(--<) :: (Functor (cat a), Category cat) => cat a a1 -> cat (a1, a1) c -> cat a c
+f --< g = split f >>> g
+infixr 1 --<
+
+
+instance (Monad m) => Applicative (Processor m a) where
+  pure b = processor pf af cf rf
+    where pf _ = do return
+          af _ = do return ()
+          cf _ = do return b
+          rf _ = do return ()
+            
+  (<*>) (Processor pf af cf rf) (Processor px ax cx rx) = processor py ay cy ry
+    where py a (stateF, stateX) = do
+            f' <- pf a stateF
+            x' <- px a stateX
+            return (f', x')
+            
+          ay a = do
+            stateF <- af a
+            stateX <- ax a
+            return (stateF, stateX)
+            
+          cy (stateF, stateX) = do
+            b2c <- cf stateF
+            b <- cx stateX
+            return (b2c b)
+            
+          ry (stateF, stateX) = do
+            rx stateX
+            rf stateF
+  
+instance Monad m => Arrow (Processor m) where
+  arr = flip liftA id
+  (&&&) = forkJoin
+  (***) = parallel
+  first = (*** id)
+  second = (id ***)
+  
+-------------------------------------------------------------
+            
+--   Runs the processor once: allocates, processes, converts to output, and deallocates.
+run :: (Monad m) => Processor m a b -> a -> m b
+run = runWith id
+
+--   Keeps running the processing function in a loop until a predicate on the output is true.
+-- Useful for processors whose main function is after the allocation and before deallocation.
+runUntil :: (Monad m) => Processor m a b -> a -> (b -> m Bool) -> m b
+runUntil (Processor pf af cf rf) a untilF = do
+  x <- af a
+  let repeatF y = do
+        y' <- pf a y
+        b <- cf y'
+        b' <- untilF b
+        if b' then return b else repeatF y'
+  d <- repeatF x
+  rf x
+  return d
+
+
+--   Runs the processor once, but passes the processing + conversion action to the given function.
+runWith :: Monad m => (m b -> m b') -> Processor m a b -> a -> m b'
+runWith f (Processor pf af cf rf) a = do
+        x <- af a
+        b' <- f (pf a x >>= cf)
+        rf x
+        return b'
+\end{code}
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}

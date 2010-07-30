@@ -10,6 +10,7 @@
 \usepackage{subfigure}
 \usepackage[shell,pdf]{dottex}
 \usepackage{pdfpages}
+\usepackage{url}
 %include polycode.fmt 
 
 \usepackage[]{cite}
@@ -129,7 +130,7 @@ First, all of the models of FRP that I encountered had primitives for integratio
 
 The second problem is that none of the FRP models studied restricted the systems \emph{by definition} to be causal. For example, with the semantics of Yampa there is nothing in the definition of signal functions that ensures that they are causal. It is possible to add a causality \emph{requirement} to any model, but that will not ensure that all systems implemented with the model's building blocks are actually causal. 
 
-These problems and a possible solution was discussed in a report I wrote on the subject (\cite{lewis_gaccum_2010}), that was also included in the progress report of this project. It is included here as Appendix \ref{adx:progress}, section III. However in that report I did not address issues such as pathologically discontinuous functions, nor did I offer a unified framework for both discrete and continuous time signals. Later, in a pair of blog posts (\cite{lewis_axiomatic_frp_2010}, and \cite{lewis_insensitivity_2010}), I have discussed ways of mending these issues and received some feedback from active FRP researchers. The following desciribes the final definitions resulting from my research.
+These problems and a possible solution was discussed in a report I wrote on the subject (\cite{lewis_gaccum_2010}), that was also included in the progress report of this project. It is included here as Appendix \ref{adx:progress}, section III. However in that report I did not address issues such as pathologically discontinuous functions, nor did I offer a unified framework for both discrete and continuous time signals. Later, in a pair of blog posts (see \cite{lewis_axiomatic_frp_2010} and \cite{lewis_insensitivity_2010}), I have discussed ways of mending these issues and received some feedback from active FRP researchers. The following desciribes the final definitions resulting from my research.
 
 \subsection{The proposed model}
 

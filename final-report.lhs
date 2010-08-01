@@ -189,7 +189,11 @@ For continuous, real time, we use the real line as the time domain. It is ordere
 
 Future work may focus on clarifying which classes of operations can or can't be defined using @scanlT@.
 
+The @scanlT@ function just described was implemented - albeit in a naive implementation that relies on strong assumptions - as part of the allocated-processor Haskell package, that is available on hackage (http://hackage.haskell.org). It was used for the implementation of the robotic system.
+
 \section{Discussion of the final implementation}
+\label{sec:finalimplem}
+
 As detailed in the progress report (appendix \ref{adx:progress} of this report, section IV), the final implementation of the robotic system is based on my own FRP framework. Using this framework I then implemented packages providing functional wrapping for computer vision and robotic control elements. A few examples are given here, followed by a top-level description of the implementation:
 \begin{itemize}
 \item The face detection element is provided by the @cv-combinators@ package as an element with type
@@ -206,10 +210,61 @@ By definition of the @Processor@ interface, this type is equivalent to a functio
 
 \end{itemize}
 
+The robotic system implemented performed the following task: find a face in the video image, and turn towards the face. If the face is ``too small'' - move forward, otherwise move backwards. The program, in Haskell, was 100 lines of code of which 30 lines were import statements, and about 30 more were comments, type signatures, and empty lines. The remainder is about 40 lines of logic, which includes 12 highly generic, reusable functions. These functions can (and probably should) be included in other generic libraries, as future work. The remaining handful of functions, about 15 lines in all, are the actual specific parts of the program. There are no loops, no ``setup'' or ``teardown'' code, no registrations, allocations or deallocations and no redundant structural code whatsoever - as is the norm in conventional functional code. 
+
+Of particular interest is the main function, which is defined as:
+\begin{code}
+main :: IO ()  
+main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY >>> lastFace >>> controller >>> velocityRMP)
+      where lastFace = revertAfterT 5 zeroV . holdMaybe zeroV clock \$ (faceDetect >>> arr listToMaybe)
+\end{code}
+
+Where,
+\begin{itemize}
+\item @runTillKeyPressed@ runs the given system until a key is pressed.
+\item @videoSource@ supplies images from a webcam.
+\item @imageResizeTo@ does as expected.
+\item @lastFace@ detects faces, ``remembering'' the last face encountered for 5 seconds of no detection before ``giving up'' and starting to return ``no-detect'' values. It uses the @revertAfterT@ function described in section \ref{sec:finalimplem}.
+\item @Controller@ is a function (defined elsewhere) that converts detection vectors to velocity commands that must be sent to the robot.
+\item @velocityRMP@ sends velocity commands to the robot's hardware.
+\end{itemize}
+
+The previous listing of the main function performs the robotic control only. Another version that controls the robot while simultaneously showing in a window on the screen a graphical representation of the detected faces may be implemented as:
+
+\begin{code}
+main :: IO ()  
+main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY 
+             >>> (id &&& lastFace) >>> second (controller >>> velocityRMP) &&& showVideo)
+      where showVideo = (second . arr \$ return) >>> ImageProcessors.drawRects >>> ImageProcessors.window 0
+            lastFace = revertAfterT 5 zeroV . holdMaybe zeroV clock \$ (faceDetect >>> arr listToMaybe)
+\end{code}
+
+The complete source code is available as part of the RMP package on Hackage (http://hackage.haskell.org).
+
 \section{FRP compared to other methods}
+As part of my work in the autonomous robotics laboratory in the department of electrical engineering at our university, I have implemented a similar date-flow framework in C++. The framework was sufficiently advanced to be considerd a proper reactive development environment. I have also experienced development using Simulink, a graphical environment produced by The Mathworks (http://www.mathworks.com). Having now completed an implementation in FRP, these are my conclusions:
+\begin{itemize}
+\item Using an imperative-based reactive framework does indeed relieve the programmer from the burden of writing loops, setup / teardown and allocation code, and other annoying technicalities. It also makes it very easy to construct systems from the ``building blocks'' supplied by the library.
+\item The drawback of the imperative-based reactive frameworks is that they cannot assist at all when the we require something that is not part of the framework, such as a custom calculation on signals. The programmer must revert the old imperative style with all its drawbacks.
+\item Furthermore, development of new building blocks can become difficult, and it may be hard to re-use parts of existing blocks.
+\item Lastly, and perhaps most importantly, there is no (and probably can't be) any simple model that defines the precise denotations used by the imperative systems. The internals rely on mutability, state, side effects, etc. and there is no simple way to describe all these.
+\end{itemize}
+With FRP, the advantages are retained and the disadvantages are discarded. I see no reason to \emph{not} pursue FRP as an alternative.
+
+
 
 \section{Conclusions and recommendations}
+The strongest conclusion from this project is that functional programming, whether used in FRP or other settings, is a great tool. It is functional programming coupled with a strong type system such as Haskell's that makes denotational design possible. The other conclusions are:
+\begin{itemize}
+\item FRP is a paradigm for reactive programming that is worthy of further exploration. Specifically, it lacks a coherent and complete denotational model. A (very?) small step in the definition of such a model was made in this project in the definition of the @scanlT@ operator. Whether or not this definition proves in the future, it's the first time (that I know of) that such an attempt was made.
+\item Code written in FRP can be shorter and easier to analyze and generalize than code written imperatively (even when using an imperative reactive framework).
+\item FRP is immature. There is no precisely defined and complete model and no reliable implementation thereof. However, for specific tasks it is possible to work with subsets of FRP that are almost as good as the ``real thing'' would be, at the cost of some custom work on the framework.
+\end{itemize}
 
+It is my hope that others will continue exploring FRP and continue to make this idea more and more precise, and with better and more reliable implementations. Eventually, it may become mature enough to use for actual production environments, making life so much easier for the reactive programmer.
+
+\subsection{Acknowledgement}
+I would like to thank Prof. Hugo Guterman for accepting this rather obscure idea as my official final year project. 
 
 \pagebreak
 

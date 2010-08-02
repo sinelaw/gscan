@@ -17,8 +17,8 @@
 \topmargin -1.5cm        % read Lamport p.163
 \oddsidemargin -0.04cm   % read Lamport p.163
 \evensidemargin -0.04cm  % same as oddsidemargin but for left-hand pages
-\textwidth 16.5cm
-\textheight 23.5cm 
+\textwidth 16cm
+\textheight 23cm 
 
 %\bibpunct();A{},\let\cite=\citep
 
@@ -61,7 +61,7 @@ There are several programming languages and environments which are designed for 
 
 FRP is a paradigm that aims to make reactive systems programming more tractable (some of the introductory papers on FRP are \cite{ElliottHudak97:Fran}, \cite{courtney_genuinely_2001}, \cite{nilsson_functional_2002}, and most recently \cite {Elliott2009-push-pull-frp}). FRP supplies the programmer with very general elements and operations that should suffice for the construction of any reactive system. Programming of reactive systems in an FRP framework allows the programmer to concentrate on the structure of the system, rather than operational implementation details that are not related to the system's actual purpose. There is no ``imperative wall'' - the system can be described functionally (and thus declaratively) wherever we wish, even in the lower-level details. The relative simplicity of a system's description in FRP terms, compared to imperative-style programming, makes it a good solution to the problems described above. For a more detailed discussion see the appended preliminary and progress reports.
 
-FRP is a subset of \emph{functional programming}, an approach that will described shortly in the following subsection.
+FRP is a subset of \emph{functional programming}, an approach that will described shortly in the following subsection. The implementations in this project were done using the functional programming language Haskell.
 
 \subsubsection{Functional programming}
 Functional programming is an increasingly popular alternative to imperative-style programming, which does not suffer the drawbacks discussed earlier. For a short introduction to functional programming see the preliminary report for this project (see appendix \ref{adx:preliminary}). Hughes' motivational paper (see \cite{hughes_functional_1989}) is slightly outdated (being over 20 years old) but still relevant and interesting. Some of the common features of functional programming are:
@@ -189,7 +189,7 @@ For continuous, real time, we use the real line as the time domain. It is ordere
 
 Future work may focus on clarifying which classes of operations can or can't be defined using @scanlT@.
 
-The @scanlT@ function just described was implemented - albeit in a naive implementation that relies on strong assumptions - as part of the allocated-processor Haskell package, that is available on hackage (http://hackage.haskell.org). It was used for the implementation of the robotic system.
+The @scanlT@ function just described was implemented - albeit in a naive implementation that relies on strong assumptions - as part of the allocated-processor Haskell package, that is available on hackage (\url{http://hackage.haskell.org}). It was used for the implementation of the robotic system.
 
 \section{Discussion of the final implementation}
 \label{sec:finalimplem}
@@ -212,12 +212,21 @@ By definition of the @Processor@ interface, this type is equivalent to a functio
 
 The robotic system implemented performed the following task: find a face in the video image, and turn towards the face. If the face is ``too small'' - move forward, otherwise move backwards. The program, in Haskell, was 100 lines of code of which 30 lines were import statements, and about 30 more were comments, type signatures, and empty lines. The remainder is about 40 lines of logic, which includes 12 highly generic, reusable functions. These functions can (and probably should) be included in other generic libraries, as future work. The remaining handful of functions, about 15 lines in all, are the actual specific parts of the program. There are no loops, no ``setup'' or ``teardown'' code, no registrations, allocations or deallocations and no redundant structural code whatsoever - as is the norm in conventional functional code. 
 
-Of particular interest is the main function, which is defined as:
+Of particular interest is the main function, which is defined as given in figure \ref{code:main}.
+\floatstyle{boxed}  \restylefloat{figure}
+\begin{figure}[h]
 \begin{code}
 main :: IO ()  
-main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY >>> lastFace >>> controller >>> velocityRMP)
-      where lastFace = revertAfterT 5 zeroV . holdMaybe zeroV clock \$ (faceDetect >>> arr listToMaybe)
+main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY 
+                          >>> lastFace >>> controller >>> velocityRMP)
+      where lastFace = revertAfterT 5 zeroV 
+                       . holdMaybe zeroV clock 
+                       $ (faceDetect >>> arr listToMaybe)
 \end{code}
+\caption{The main function running the robotic system}
+\label{code:main}
+\end{figure}
+\floatstyle{plain}  \restylefloat{figure}
 
 Where,
 \begin{itemize}
@@ -229,20 +238,32 @@ Where,
 \item @velocityRMP@ sends velocity commands to the robot's hardware.
 \end{itemize}
 
-The previous listing of the main function performs the robotic control only. Another version that controls the robot while simultaneously showing in a window on the screen a graphical representation of the detected faces may be implemented as:
+The previous listing of the main function performs the robotic control only. Another version that controls the robot while simultaneously showing in a window on the screen a graphical representation of the detected faces may be implemented as given in figure \ref{code:main2}.
 
+\floatstyle{boxed}  \restylefloat{figure}
+\begin{figure}[h]
 \begin{code}
 main :: IO ()  
 main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY 
-             >>> (id &&& lastFace) >>> second (controller >>> velocityRMP) &&& showVideo)
-      where showVideo = (second . arr \$ return) >>> ImageProcessors.drawRects >>> ImageProcessors.window 0
-            lastFace = revertAfterT 5 zeroV . holdMaybe zeroV clock \$ (faceDetect >>> arr listToMaybe)
+             >>> (id &&& lastFace) 
+             >>> second (controller >>> velocityRMP) &&& showVideo)
+      where showVideo = (second . arr \$ return) 
+                        >>> ImageProcessors.drawRects 
+                        >>> ImageProcessors.window 0
+            lastFace = revertAfterT 5 zeroV 
+                       . holdMaybe zeroV clock 
+                       $ (faceDetect >>> arr listToMaybe)
 \end{code}
+\caption{Alternative main function including detection display}
+\label{code:main2}
+\end{figure}
+\floatstyle{plain}  \restylefloat{figure}
 
-The complete source code is available as part of the RMP package on Hackage (http://hackage.haskell.org).
+The complete source code of the main module is available as part of the RMP package on Hackage (\url{http://hackage.haskell.org}). It is included here in appendix \ref{adx:source}.
+
 
 \section{FRP compared to other methods}
-As part of my work in the autonomous robotics laboratory in the department of electrical engineering at our university, I have implemented a similar date-flow framework in C++. The framework was sufficiently advanced to be considerd a proper reactive development environment. I have also experienced development using Simulink, a graphical environment produced by The Mathworks (http://www.mathworks.com). Having now completed an implementation in FRP, these are my conclusions:
+As part of my work in the autonomous robotics laboratory in the department of electrical engineering at our university, I have implemented a similar date-flow framework in C++. The framework was sufficiently advanced to be considerd a proper reactive development environment. I have also experienced development using Simulink, a graphical environment produced by The Mathworks (\url{http://www.mathworks.com}). Having now completed an implementation in FRP, these are my conclusions:
 \begin{itemize}
 \item Using an imperative-based reactive framework does indeed relieve the programmer from the burden of writing loops, setup / teardown and allocation code, and other annoying technicalities. It also makes it very easy to construct systems from the ``building blocks'' supplied by the library.
 \item The drawback of the imperative-based reactive frameworks is that they cannot assist at all when the we require something that is not part of the framework, such as a custom calculation on signals. The programmer must revert the old imperative style with all its drawbacks.
@@ -259,14 +280,63 @@ The strongest conclusion from this project is that functional programming, wheth
 \item FRP is a paradigm for reactive programming that is worthy of further exploration. Specifically, it lacks a coherent and complete denotational model. A (very?) small step in the definition of such a model was made in this project in the definition of the @scanlT@ operator. Whether or not this definition proves in the future, it's the first time (that I know of) that such an attempt was made.
 \item Code written in FRP can be shorter and easier to analyze and generalize than code written imperatively (even when using an imperative reactive framework).
 \item FRP is immature. There is no precisely defined and complete model and no reliable implementation thereof. However, for specific tasks it is possible to work with subsets of FRP that are almost as good as the ``real thing'' would be, at the cost of some custom work on the framework.
+\item Experimental software development, and especially research of unknown software engineering challenges, is a risky target for time estimation and work schedules. For future, similar research-oriented projects, I suggest leaving most of the time for ``open questions'' and setting less specific milestones. Flexibility should be allowed for changing of the entire schedule when some questions turn out to be more difficult than expected, or simply more interesting and worthy of further exploration at the price of other, planned tasks.
 \end{itemize}
+
+\subsection{Source code summary}
+
+Figure \ref{table:code} presents a summary of all the lines of code written for this project. For comparison, a framework that was developed for months at the Laboratory of Autnomous Robotics, counting only the parts that have an equivalent here, takes about three times as much lines of C++ code. The result is also much less satisfactory. In my opinion, it is remarkable that as little as 1300 lines of Haskell code are required to wrap low level libraries for computer vision and hardware control, into a high-level functionally pure framework. This implementation of an FRP framework may be simplistic and minimal, but it is sufficiently powerful to serve as a superior replacement for much more complicated libraries in languages such as C++.
+
+\begin{figure}[h]
+\begin{center}
+\begin{tabular}{ r  l  }
+\hline
+  Lines & Haskell File \\ \hline
+\hline 
+   13 &  \url{RMP/src/Test.hs} \\
+  110 &  \url{RMP/src/FaceFollowTest.hs} \\
+  109 &  \url{RMP/src/System/RMP.hs} \\
+  222 &  \url{cv-combinators/src/AI/CV/ImageProcessors.hs} \\
+   43 &  \url{cv-combinators/src/Graphics/GraphicsProcessors.hs} \\
+   36 &  \url{cv-combinators/src/Test.hs} \\
+   70 &  \url{cv-combinators/src/IntegratedTest.hs} \\
+   25 &  \url{cv-combinators/test/Simple.hs} \\
+  446 &  \url{allocated-processor/src/Control/Processor.hs} \\
+   33 &  \url{allocated-processor/src/Foreign/ForeignPtrWrap.hs} \\
+   74 &  \url{HOpenCV/src/AI/CV/OpenCV/HighGui.hs} \\
+   16 &  \url{HOpenCV/src/AI/CV/OpenCV/Types.hs} \\
+   39 &  \url{HOpenCV/src/Test.hs} \\
+\hline
+ 1236 &  total \\
+\hline
+\\
+      & C/C++ File \\
+\hline
+   94 &  \url{RMP/src/System/RMP/canio.h} \\
+  392 &  \url{RMP/src/System/RMP/canio_rmpusb.cpp} \\
+   51 &  \url{RMP/src/System/RMP/canio_rmpusb.h} \\
+   81 &  \url{RMP/src/System/RMP/rmpusb.cpp} \\
+   24 &  \url{RMP/src/System/RMP/rmpusb.h} \\
+   36 &  \url{HOpenCV/src/AI/CV/OpenCV/HOpenCV_wrap.h} \\
+  146 &  \url{HOpenCV/src/AI/CV/OpenCV/HOpenCV_wrap.c} \\
+\hline
+  824 &  total \\
+\hline
+\end{tabular}
+\end{center}
+\caption{Summary of code written for this project}
+\label{table:code}
+\end{figure}
+
+\subsection{Finale}
 
 It is my hope that others will continue exploring FRP and continue to make this idea more and more precise, and with better and more reliable implementations. Eventually, it may become mature enough to use for actual production environments, making life so much easier for the reactive programmer.
 
 \subsection{Acknowledgement}
 I would like to thank Prof. Hugo Guterman for accepting this rather obscure idea as my official final year project. 
 
-\pagebreak
+
+\newpage
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
@@ -275,6 +345,129 @@ I would like to thank Prof. Hugo Guterman for accepting this rather obscure idea
 
 \appendices
 
+\section{Source code}
+\label{adx:source}
+
+\subsection{Main module}
+The following lists the complete main file for the robotic controller. Notice the multiple usage of libraries, including several that were written especially for this project.
+
+\begin{code}
+-- A face-following robot
+
+module Main where
+
+import qualified AI.CV.ImageProcessors as ImageProcessors
+import AI.CV.ImageProcessors(ImageProcessor, ImageSource, runTillKeyPressed)
+import AI.CV.OpenCV.CV as CV
+import AI.CV.OpenCV.CxCore(CvRect(..), CvSize(..))
+import AI.CV.OpenCV.Types(PImage)
+
+import System.RMP(velocityRMP)
+
+import Control.Processor(IOProcessor, trace, fir, revertAfterT, holdMaybe)
+import Data.VectorSpace(zeroV, (^-^), AdditiveGroup)
+
+import Control.Monad(join)
+import Prelude hiding ((.),id)
+import Control.Arrow
+import Control.Category
+import Data.Maybe(listToMaybe)
+
+-- Debugging
+import qualified Debug.Trace as DT
+traceId :: (Show a) => a -> a
+--traceId x = DT.trace (show x) x
+traceId = id
+--
+
+
+defaultHead :: a -> [a] -> a
+defaultHead def [] = def
+defaultHead _   xs = head xs
+
+imageResizeTo :: Integral a => a -> a -> ImageProcessor
+imageResizeTo resX resY = ImageProcessors.resize 
+                          (fromIntegral resX) 
+                          (fromIntegral resY) CV.CV_INTER_LINEAR
+
+faceDetect :: IOProcessor PImage [CvRect]
+faceDetect = ImageProcessors.haarDetect 
+             "/usr/share/opencv/haarcascades/haarcascade_frontalface_alt_tree.xml" 
+             1.1 3 CV.cvHaarFlagNone (CvSize 20 20)
+
+videoSource :: ImageSource
+videoSource = ImageProcessors.camera 0
+
+fromIntegral2 :: (Integral b, Num c) => (b, b) -> (c, c)
+fromIntegral2 = join (***) fromIntegral
+
+
+absMax :: (Num a, Ord a) => a -> a -> a
+absMax b a = max (min a (abs b)) (- (abs b))
+-----------------------------------------------------------------------------
+
+-- Calculates a measure for the distance to a rect using its area, given a reference area size.
+calcDist :: (Num x, Ord x) => x -> CvRect -> x
+calcDist reference rect = if rectArea > 1 then reference - rectArea else 0
+    where w = rectWidth  rect
+          h = rectHeight rect
+          rectArea = traceId . uncurry (*) $ fromIntegral2 (w,h)
+
+--  Calculates a distance to the given rect using some hand-tuned parameters 
+calcTrans :: (Integral b, Integral a) => a -> a -> CvRect -> b
+calcTrans resX resY = (`div` tranScale) . traceId . calcDist referenceArea
+    where referenceArea = fromIntegral ((resX*resY) `div` 30)
+          tranScale = 20 -- 5 for 160x120?
+
+--  Calculates the difference (direction) from the detect rect to the center of the screen.
+-- the 'fromIntegral2' stuff is due to CInt not being a VectorSpace
+calcDir :: (Integral a, Integral b, AdditiveGroup b) => a -> a -> CvRect -> (b, b)
+calcDir resX resY rect = if rect /= zeroV then rectCenter ^-^ screenCenter else (0,0)
+    where screenCenter = fromIntegral2 (resX `div` 2, resY `div` 2)
+          rectCenter = fromIntegral2 (rectX rect + (rectWidth rect `div` 2), 
+                                      rectY rect + (rectHeight rect `div` 2))
+  
+--  Takes a direction vector (x,y) and returns required rotation speed to align with that direction.
+-- for now we disregard the 'x' component, because we can't really point our robot "up" or "down" anyway.
+dirToRotation :: (Num a, Ord a, Integral a, Num b, Ord b) => (a,b) -> a
+dirToRotation (yRot, _) = - round (fromIntegral yRot * rotScale)
+    where rotScale = 1.4 -- for 160x120, should be 4?
+  
+--  calculates the (translation, rotation) pair used to control the robot, from a detected rect.
+-- currently translation is constantly 0.
+calcTransRot :: (Num c, Ord c, Integral c, Integral a, Integral b, AdditiveGroup b) 
+                => a -> a -> CvRect -> (c, b)
+calcTransRot resX resY = (calcTrans resX resY >>> absMax maxTransVelocity)  
+                         &&& (calcDir resX resY >>> dirToRotation >>> absMax maxRotVelocity)
+
+controller :: Integral a => a -> a -> IOProcessor CvRect (Int, Int)
+controller resX resY =  arr (calcTransRot resX resY)
+
+clock :: IO Double
+clock = return 1
+
+--  The maximum rotational and translational velocity of the robot
+maxRotVelocity, maxTransVelocity :: Integral a => a
+maxTransVelocity = 40
+maxRotVelocity = 150
+
+main :: IO ()  
+main = runTillKeyPressed (videoSource >>> imageResizeTo resX resY 
+             >>> (id &&& averageFace) 
+             >>> second (faceToVel >>> trace >>> velocityRMP) &&& showVideo)
+      where showVideo = (second . arr $ return) 
+                        >>> ImageProcessors.drawRects 
+                        >>> ImageProcessors.window 0
+            averageFace = lastFace
+            lastFace = revertAfterT 5 zeroV 
+                       . holdMaybe zeroV clock 
+                       $ (faceDetect >>> arr listToMaybe)
+            resX = 240
+            resY = 180
+            faceToVel = controller resX resY
+\end{code}
+
+\newpage
 \section{Preliminary Report}
 \label{adx:preliminary}
 \includepdf[pages=-]{./preliminary-report.pdf}
